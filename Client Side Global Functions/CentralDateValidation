@@ -1,0 +1,65 @@
+/*
+    Script Name:   CentralDateValidation
+    Customer:      VisualVault
+    Purpose:       The purpose of this function is to allow the validation and comparison of dates.
+    Parameters:    The following represent variables passed into the function:  
+                    Passed Parameters Order:  PassedControlValue, ValidationType, ComparisonValue, ComparisonUnit, ComparisonQty
+                    ValidationTypes include DateEqual, DateBefore, DateAfter,DateBeforeUnit and DateAfterUnit
+                    PassedControlValue is always going to be the current control.  Value acquired from GetFieldValue.
+                    ComparisonValue is always going to be the control we want to compare.  Value acquired from GetFieldValue.
+                    ComparisonUnit will be M, Y or D.
+                    Comparison Qty is the numeric value we are comparing against.
+    Return Value:  The following represents the value being returned from this function:
+                    True if required number are selected, false if not.        
+    Date of Dev:   
+    Last Rev Date: 06/01/2011
+    Revision Notes:
+    06/01/2011 - Jason Hatch: Initial creation of the business process. 
+*/
+
+
+
+if (PassedControlValue && ComparisonValue) {
+    //Convert value we are comparing to a lower case.
+    var datepart = ComparisonUnit.toLowerCase();
+
+    //Use parse to put the two values into a numeric format that can be compared.
+    var FirstDate = Date.parse(PassedControlValue);
+    var SecondDate = Date.parse(ComparisonValue);
+    //calculate the difference between the two dates.
+    var diff = FirstDate - SecondDate;
+    var divideBy = {
+        w: 604800000,
+        d: 86400000,
+        h: 3600000,
+        n: 60000,
+        s: 1000
+    };
+    //Calculate difference for the given unit.  If negative value, change to positive for comparison.
+    var DiffVal = Math.abs(Math.floor(diff / divideBy[datepart]));
+    //alert (DiffVal);
+
+    // ** Changed variables to FirstDate & Second Date and simplified conditional statements.
+    switch (ValidationType) {
+        case 'DateEqual': //Compare when the current control date equals the second comparable value.
+            return FirstDate === SecondDate;
+
+        case 'DateBefore': //Compare when the current control date is before the second comparable value.
+            return FirstDate <= SecondDate;
+
+        case 'DateAfter': //Compare when the current control date is after the second comparable value.
+            return FirstDate >= SecondDate;
+
+        case 'DateBeforeUnit': //Compare when the current control date is before the second comparible value and the difference is greater than X units.  X = ComparisonQty.
+            return FirstDate <= SecondDate && DiffVal <= ComparisonQty;
+
+        case 'DateAfterUnit': //Compare when the current control date is after the second comparible value and the difference is greater than X units.  X = ComparisonQty.
+            return FirstDate >= SecondDate && DiffVal <= ComparisonQty;
+
+        default:
+            alert('The right validation was not passed to the CentralDateValidation Function');
+    }
+}
+
+return false;
+
