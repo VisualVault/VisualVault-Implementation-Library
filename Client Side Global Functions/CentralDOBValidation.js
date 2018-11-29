@@ -1,7 +1,8 @@
 /*
     Script Name:   CentralDOBValidation
     Customer:      VisualVault
-    Purpose:       The purpose of this function is to allow the validation and comparison of dates.
+    Purpose:       The purpose of this function is to allow the validation and comparison of date of birth and to determine if
+                    the DOB puts the individual older than a certain age.
     Parameters:    The following represent variables passed into the function:  
                     Passed parameters:  ValidationType, ControlName, ComparisonValue
                     This function compares an age versus Date of Birth being compared to make sure the person is within the expected age range.
