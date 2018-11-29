@@ -17,7 +17,16 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Customer:      VisualVault
      Purpose:       Get a list User IDs, First Name, Last Name and Email addresses for all users who are the member of a group or multiple groups.
      Parameters:    The following represent variables passed into the function:
-
+                     Array of VisualVault security Groups.  Example as follows:
+                     
+                     var groupsParamObj = [
+                            {
+                                name: 'groups',
+                                value: ['Information and Eligibility Staff', 'Information and Eligibility Managers']
+                            }
+                        ];
+                     
+                     
      Process PseudoCode:
                     1. Extract a list of groups and get the group.  
                     2. For each group found, get user information and load user information into the UserData object.
