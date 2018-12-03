@@ -292,7 +292,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                                         }); //end of relateForm
                                 }
                                 else {
-                                    throw new Error("The process used to update a found form returned with an error."); //TODO: return the error message returned with data for better visibility.
+                                    throw new Error("The process used to update a found form returned with an error. The status was: " + relateNewChildForm.meta.status + ". The status message was: " + newChildForm.meta.statusMsg); 
                                 }
                             }); // end of postFormRevision
                     })
