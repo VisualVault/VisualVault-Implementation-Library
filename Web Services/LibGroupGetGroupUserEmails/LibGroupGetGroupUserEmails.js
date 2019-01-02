@@ -40,10 +40,11 @@ module.exports.main = function (ffCollection, vvClient, response) {
                      2 - User data object with list of users.
 
      Date of Dev:   11/16/2017
-     Last Rev Date: 06/04/2018
+     Last Rev Date: 01/02/2019
      Revision Notes:
      11/16/2017 - Austin Noel: Initial creation of the business process. 
      06/04/2018 - Jason Hatch: Add mechanism to return with group name.
+     01/02/2019 - Kendra Austin: Only return enabled users.
      */
 
     logger.info('Start of the process LibGroupGetGroupUserEmails at ' + Date());
@@ -96,7 +97,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
     var getUserInformationForGroup = function (groupID, groupName) {
         if (!isError) {
             var groupsData = {};
-            groupsData.fields = "Id,Name,UserId,FirstName,LastName,EmailAddress";
+            groupsData.fields = "Id,Name,UserId,FirstName,LastName,EmailAddress,Enabled";
 
             return vvClient.groups.getGroupsUsers(groupsData, groupID).then(function (resp) {
                 var respData = JSON.parse(resp);
@@ -105,12 +106,15 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     var usersInfo = respData.data;
 
                     usersInfo.forEach(function (userInfo) {
-                        //Add the user to the data array if it's not already there
-                        if (!userData.find(function (user, index) {
-                            return user.id === userInfo.id;
-                        })) {
-                            userInfo.groupname = groupName;
-                            userData.push(userInfo);
+                        //Only add enabled users
+                        if (userInfo.enabled == true) {
+                            //Add the user to the data array if it's not already there
+                            if (!userData.find(function (user, index) {
+                                return user.id === userInfo.id;
+                            })) {
+                                userInfo.groupname = groupName;
+                                userData.push(userInfo);
+                            }
                         }
                     });
 
