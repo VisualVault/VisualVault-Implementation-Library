@@ -60,10 +60,11 @@ module.exports.main = function (ffCollection, vvClient, response) {
                      1 - Message
                      2 - On Success, returns the form data object(s) of the posted form or updated form(s)
       Date of Dev:   11/19/2018
-      Last Rev Date:
+      Last Rev Date: 01/16/2019
  
       Revision Notes:
-      11/19/2018: Kendra Austin - Initial creation of the business process. 
+      11/19/2018: Kendra Austin - Initial creation of the business process.
+      01/16/2018: Kednra Austin - for relateForms calls, 404 means relation already exists. Allow script to continue past this.
         
       */
 
@@ -220,12 +221,12 @@ module.exports.main = function (ffCollection, vvClient, response) {
             if (actionRequested == 'post' || (actionRequested == 'update' && updateByRevisionId == true)) {
                 return vvClient.forms.relateForm(currentFormId, relatedFormId).then(function (relateResp) {
                     var relatedResp = JSON.parse(relateResp);
-                    if (relatedResp.meta.status === 200) {
+                    if (relatedResp.meta.status === 200 || relatedResp.meta.status === 404) {
                         returnObj[0] = 'Success';
                         returnObj[1] = "The request to " + actionRequested + " and relate a form was handled successfully.";
                         returnObj[2] = relatedFormsArray;
-
-                    } else {
+                    }
+                    else {
                         //logger.info("Call to relate forms returned with an error.");
                         throw new Error("Call to relate forms returned with an error.");
                     }
@@ -292,7 +293,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                                         }); //end of relateForm
                                 }
                                 else {
-                                    throw new Error("The process used to update a found form returned with an error. The status was: " + relateNewChildForm.meta.status + ". The status message was: " + newChildForm.meta.statusMsg); 
+                                    throw new Error("The process used to update a found form returned with an error. The status was: " + relateNewChildForm.meta.status + ". The status message was: " + newChildForm.meta.statusMsg);
                                 }
                             }); // end of postFormRevision
                     })
