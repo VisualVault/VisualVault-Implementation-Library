@@ -19,14 +19,35 @@
                                 For all passed in dates, ignore time values (as when passing in Date()). Bug fixes for DateBeforeUnit and DateAfterUnit.
 */
 
-if (PassedControlValue && ComparisonValue) {
+if (PassedControlValue && ValidationType) {
+    //Validate that the correct additional values were passed in, based on ValidationType
+    if (ValidationType == 'DateEqual' || ValidationType == 'DateBefore' || ValidationType == 'DateAfter') {
+        if (!ComparisonValue) {
+            return false;
+        }
+    }
+    if (ValidationType == 'DateBeforeUnit' || ValidationType == 'DateAfterUnit') {
+        if (!ComparisonUnit || !ComparisonQty) {
+            alert('For a ValidationType of DateBeforeUnit or DateAfterUnit, a ComparisonUnit and ComparisonQty must be provided to the CentralDateValidation Function.');
+            return false;
+        }
+    }
+
     //Remove the time portion of any date passed in
+    var d = new Date();
+    var startOfToday = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     var controlValue = new Date(PassedControlValue);
-    var compareValue = new Date(ComparisonValue);
+    var compareValue = new Date();
     var passedControlValueDateOnly = new Date(controlValue.getFullYear(), controlValue.getMonth(), controlValue.getDate());
-    var comparisonValueDateOnly = new Date(compareValue.getFullYear(), compareValue.getMonth(), compareValue.getDate());
+    var comparisonValueDateOnly = new Date();
+
+    if (ComparisonValue) {
+        compareValue = new Date(ComparisonValue);
+        comparisonValueDateOnly = new Date(compareValue.getFullYear(), compareValue.getMonth(), compareValue.getDate());
+    }
 
     //Use parse to put the values into numeric formats that can be compared.
+    var today = Date.parse(startOfToday);
     var FirstDate = Date.parse(passedControlValueDateOnly);
     var SecondDate = Date.parse(comparisonValueDateOnly);
 
@@ -37,7 +58,7 @@ if (PassedControlValue && ComparisonValue) {
         //Get the number of milliseconds for DiffVal. One month from Feb 1 to March 1 is a different value than one month from Dec 1 to Jan 1. Leap years, etc.
         var DiffVal;
         var unitBefore = new Date();
-        var unitAfter = new Date(); 
+        var unitAfter = new Date();
 
         if (datepart == 'm') {
             var month = Number(passedControlValueDateOnly.getMonth());
@@ -80,22 +101,6 @@ if (PassedControlValue && ComparisonValue) {
         case 'DateAfterUnit': //Compare when the current control date is after the second comparible value and the difference is greater than or = X units.  X = ComparisonQty.
             return FirstDate >= SecondDate && DiffVal >= SecondDate;
 
-        default:
-            alert('The right validation was not passed to the CentralDateValidation Function');
-    }
-}
-else if (PassedControlValue) {
-    //Remove the time portion of any date passed in, and initialize a today date for comparison
-    var d = new Date();
-    var startOfToday = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    var controlValue = new Date(PassedControlValue);
-    var passedControlValueDateOnly = new Date(controlValue.getFullYear(), controlValue.getMonth(), controlValue.getDate());
-
-    //Use parse to put the values into numeric formats that can be compared.
-    var today = Date.parse(startOfToday);
-    var FirstDate = Date.parse(passedControlValueDateOnly);
-
-    switch (ValidationType) {
         case 'BeforeToday': //Compare when the current control date is before the current date.
             return FirstDate < today;
 
@@ -109,7 +114,7 @@ else if (PassedControlValue) {
             return FirstDate >= today;
 
         default:
-            alert('The right validation was not passed to the CentralDateValidation Function');
+            alert('The right ValidationType was not passed to the CentralDateValidation Function');
     }
 }
 else {
