@@ -7,7 +7,7 @@ var groupsParamObj = [
 ];
 
 return vvClient.scripts.runWebService('LibGroupGetGroupUserEmails', groupsParamObj).then(function (userInfoResponse) {
-    var userInfo = userInfoResponse[2];
+    var userInfo = userInfoResponse.data[2];
     //Extract email information for use to send an email.  Place in a comma separated variable.
     if (userInfo.hasOwnProperty('data')) {
         userInfo.data.forEach(function (user) {
