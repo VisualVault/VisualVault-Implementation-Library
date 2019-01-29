@@ -10,11 +10,11 @@
 
 
     Date of Dev:   06/01/2017
-    Last Rev Date: 
+    Last Rev Date: 01/28/2019
 
     Revision Notes:
     06/01/2017 - Jason Hatch: Initial creation of the business process. 
-
+    01/28/2019 - Jason Hatch: Certain days of the week are not calculating correctly.  Adjusted to have calcuation greater than 0.
 */
 
 
@@ -55,7 +55,7 @@ if (date1casted.getDate() != date2casted.getDate()) {
         days = days - (weeks * 2);
 
         // Remove weekend not previously removed.   
-        if (startDay - endDay > 1)
+        if (startDay - endDay > 0)
             days = days - 2;
 
         if (startDay == 0 && endDay == 6)
