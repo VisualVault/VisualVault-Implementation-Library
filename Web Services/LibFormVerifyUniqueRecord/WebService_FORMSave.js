@@ -27,10 +27,12 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     0 - Status: Unique, Not Unique, Error
 		            1 - Message
      Date of Dev:   02/23/2018
-     Last Rev Date: 03/12/2018
-     Revision Notes:
+     Last Rev Date: 04/09/2019
+
+    Revision Notes:
      02/23/2018 - Jason Hatch: Initial creation of the business process. 
      03/12/2018 - Jan Zweifel: template ID standardization
+     04/09/2019 - Kendra Austin: Escape any apostrophes in the Provider Name.
      */
 
     logger.info('Start of the process FORMSave at ' + Date());
@@ -45,7 +47,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
 
         //Get the information from the form collection payload.
         var currentDocId = ffCollection.getFormFieldByName('FORM ID').value;
-        var providerID = ffCollection.getFormFieldByName('Provider ID').value;
+        var providerName = ffCollection.getFormFieldByName('Provider Name').value;
         var serviceYearMonth = ffCollection.getFormFieldByName('Service Year Month').value;
         var revisionID = ffCollection.getFormFieldByName('Revision ID').value;
 
@@ -58,10 +60,13 @@ module.exports.main = function (ffCollection, vvClient, response) {
         templateIDObj.value = formTemplateID;
         uniqueRecordObj.push(templateIDObj);
 
+        //Escape any apostrophes in string expressions used in the query
+        var providerNameSearch = providerName.replace(/'/g, "\'");
+
         //The query of what we need to look for to determine if it is unique (required by LibFormVerifyUniqueRecord).
         var queryObj = {};
         queryObj.name = 'query';
-        queryObj.value = "[Provider ID] eq '" + providerID + "' AND [Service Year Month] eq '" + serviceYearMonth + "'";
+        queryObj.value = "[Provider ID] eq '" + providerNameSearch + "' AND [Service Year Month] eq '" + serviceYearMonth + "'";
         uniqueRecordObj.push(queryObj);
 
         //The Form ID of the Intake Child form (required by LibFormVerifyUniqueRecord).
