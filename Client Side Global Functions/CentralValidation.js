@@ -11,9 +11,10 @@
     Return Value:  The following represents the value being returned from this function:
                     True if required number are selected, false if not.        
     Date of Dev:   
-    Last Rev Date: 06/01/2011
+    Last Rev Date: 04/15/2019
     Revision Notes:
     06/01/2011 - Jason Hatch: Initial creation of the business process. 
+    04/15/2019 - Maxwell Rehbein : NumberOnly created. 
 */
 
 
@@ -62,6 +63,9 @@ switch (ValidationType) {
 
     case 'Percent':
         return VV.Form.Global.Percent.test(PassedControlValue);
+
+    case 'NumberOnly':
+        return VV.Form.Global.NumberOnly.test(PassedControlValue);
 
     default:
         alert('The right validation was not passed to the CentralValidation Function: ' + ValidationType);
