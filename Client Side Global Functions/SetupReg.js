@@ -9,9 +9,10 @@
     Return Value:  The following represents the value being returned from this function:
                             
     Date of Dev:   
-    Last Rev Date: 06/01/2011
+    Last Rev Date: 04/15/2019
     Revision Notes:
     06/01/2011 - Jason Hatch: Initial creation of the business process. 
+    04/15/2019 - Maxwell Rehbein: NumberOnly created. 
 */
 
 //This first PhoneReg is just for phones without extensions.  
@@ -38,3 +39,4 @@ VV.Form.Global.NPI = new RegExp('^\\d{10}$');
 VV.Form.Global.Currency = new RegExp('^[+-]?([0-9]{1,3}([0-9]{3},)*[0-9]{3}|[0-9]+)(\.[0-9][0-9])?$');
 // Percent check. Value can be 0 - 100 including decimals.
 VV.Form.Global.Percent = new RegExp('^(100([\.][0]{1,})?$|[0-9]{1,2}([\.][0-9]{1,})?)$');
+VV.Form.Global.NumberOnly = new RegExp('^([0-9]{1,3}([0-9]{3},)*[0-9]{3}|[0-9]+)?$');
