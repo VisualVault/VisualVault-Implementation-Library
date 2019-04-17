@@ -16,6 +16,8 @@ var formHeight = 900,
     formCntrs = formDiv.find('div[vvfftype="103"]'),
     /***formBtns is an array of all page button elements (including tab buttons)***/
     formBtns = formCntrs.find('div[vvfftype="17"] input[vvfieldtype="formbutton"]'),
+    /***uploadBtns is an array of all page button elements (including tab buttons)***/
+    uploadBtns = formCntrs.find('div[vvfftype="20"]'),
     /***formHdrs is an array of all header containers (name starts with _Header_)***/
     formHdrs = formCntrs.filter('[vvfieldnamewrapper^="_Header_"]'),
     /***formTabs is the container for the Tab buttons (name equals _Tab_1)***/
@@ -44,6 +46,14 @@ formBtns.css({ background: '#428bca', border: 'solid 1px darkgrey', color: 'whit
 //make all button text more readable if form is readonly
 if(formBtns.attr('readonly') == 'readonly') {
     formBtns.css({ color: 'lightgrey' });
+}
+
+/*******************Upload Buttons - Style*******************/
+uploadBtns.css({ background: '#428bca', border: 'solid 1px darkgrey', color: 'white' });
+uploadBtns.find('input').css({ color: 'white' });
+//make all button text more readable if form is readonly
+if(uploadBtns.attr('readonly') == 'readonly') {
+    uploadBtns.css({ color: 'lightgrey' });
 }
 
 /*******************Tab Buttons - Style*******************/
