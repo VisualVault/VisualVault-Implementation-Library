@@ -6,7 +6,7 @@
                     Passed Parameters:  PassedValue, ValidationType
                     PassedValue - this is a string of the value that is being checked.
                     ValidationType - this is the type of validation that will occur.  Value values are as follows:
-                          Phone, Email, URL, Blank, Zip, DDSelect, SSN, EIN, NPI, Currency, Percent, Number Only
+                          Phone, Email, URL, Blank, Zip, DDSelect, SSN, EIN, NPI, Currency, Percent, NumberOnly
                     These work in conjunction with the SetupReg file where all the regular expressions are stored.
     Return Value:  The following represents the value being returned from this function:
                     True if required number are selected, false if not.        
