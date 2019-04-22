@@ -61,7 +61,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
         uniqueRecordObj.push(templateIDObj);
 
         //Escape any apostrophes in string expressions used in the query
-        var providerNameSearch = providerName.replace(/'/g, "\'");
+        var providerNameSearch = providerName.replace(/'/g, "\\'");
 
         //The query of what we need to look for to determine if it is unique (required by LibFormVerifyUniqueRecord).
         var queryObj = {};
