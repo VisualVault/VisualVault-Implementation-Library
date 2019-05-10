@@ -16,11 +16,23 @@ module.exports.main = function (ffCollection, vvClient, response) {
     /*Script Name:   LibFormVerifyUniqueRecord
      Customer:      VisualVault library function.
      Purpose:       This process verifies that a form record is unique based on the passed in query criteria.  Library function.
+     Parameters:    The following represent variables passed into the function:
+                    templateId - A string representing the name of the template.
+                    query - A string representing the matching conditions. Apostrophes in text fields must be escaped. 
+                    formId - A string representing either the form ID or revision ID of the current form. 
+
+     Return Array:  This function returns an object with the following properties:
+                    status: 'Unique', 'Unique Matched', 'Not Unique', 'Error'
+                    statusMessage: A short descriptive message
+
      Date of Dev:   11/17/2017
-     Last Rev Date: 12/05/2017
+     Last Rev Date: 05/10/2019
+
      Revision Notes:
      11/17/2017 - Austin Noel: Initial creation of the business process.
      12/05/2017 - Jason Hatch: Needed a revision id returning when on record is found that is not matched.
+     05/10/2019 - Kendra Austin: Update so that passed in 'formId' parameter can be either form ID or revision ID.
+
      */
 
 
@@ -81,7 +93,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 } else {
                     //One record returned. Check to see if it matches the passed in formId
                     var form = formData.data[0];
-                    if (form.instanceName === formId.value) {
+                    if (form.instanceName === formId.value || form.revisionId === formId.value) {
                         //Record matches the passed in formId - Unique Matched
                         returnObj.status = "Unique Matched";
                         returnObj.statusMessage = "The record is unique";
