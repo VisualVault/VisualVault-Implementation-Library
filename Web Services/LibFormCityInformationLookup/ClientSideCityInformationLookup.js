@@ -5,11 +5,16 @@ var CityInformationLookup = function () {
     //This gets all of the form fields.
     var formData = VV.Form.getFormDataCollection();
 
+    var FormInfo = {};
+    FormInfo.name = 'ZipCode';
+    FormInfo.value = VV.Form.GetFieldValue('Mailing Zip Code');
+    formData.push(FormInfo);
+
     //Following will prepare the collection and send with call to server side script.
     var data = JSON.stringify(formData);
     var requestObject = $.ajax({
         type: "POST",
-        url: VV.BaseAppUrl + 'api/v1/' + VV.CustomerAlias + '/' + VV.CustomerDatabaseAlias + '/scripts?name=CityInformationLookup',
+        url: VV.BaseAppUrl + 'api/v1/' + VV.CustomerAlias + '/' + VV.CustomerDatabaseAlias + '/scripts?name=LibFormCityInformationLookup',
         contentType: "application/json; charset=utf-8",
         data: data,
         success: '',
@@ -25,7 +30,6 @@ $.when(
     CityInformationLookup()
 ).always(function (resp) {
     VV.Form.HideLoadingPanel();
-    var messageData = '';
     if (typeof (resp.status) != 'undefined') {
         messageData = "A status code of " + resp.status + " returned from the server.  There is a communication problem with the  web servers.  If this continues, please contact the administrator and communicate to them this message and where it occured.";
 
@@ -36,10 +40,10 @@ $.when(
     }
     else if (resp.meta.status == '200') {
         if (resp.data[0] != 'undefined' && resp.data[0] == 'Success') {
-            VV.Form.SetFieldValue('City', resp.data[2].City)
-            VV.Form.SetFieldValue('State', resp.data[2].State);
+            VV.Form.SetFieldValue('Physical City', resp.data[2].City)
+            VV.Form.SetFieldValue('Physical State', resp.data[2].State);
             VV.Form.SetFieldValue('County', resp.data[2].County)
-            
+
         }
         else if (resp.data[0] != 'undefined' && resp.data[0] == 'Error') {
 
