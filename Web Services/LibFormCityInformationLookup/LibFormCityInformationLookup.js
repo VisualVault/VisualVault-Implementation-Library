@@ -12,7 +12,7 @@ module.exports.getCredentials = function () {
 };
 
 module.exports.main = function (ffCollection, vvClient, response) {
-    /*Script Name:   CityInformationLookup
+    /*Script Name:   LibFormCityInformationLookup
      Customer:      VisualVault
      Purpose:       The purpose of this process is acquire city, state and county information based on zip code.  
      Parameter:     Zip Code
@@ -27,7 +27,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      05/14/2019 - Jason Hatch: Script created
      */
 
-    logger.info('Start of the process CityInformationLookup at ' + Date());
+    logger.info('Start of the process LibFormCityInformationLookup at ' + Date());
 
     var outputArray = [];
     //Create variables for the values the user inputs
