@@ -12,11 +12,12 @@
     Return Value:  The following represents the value being returned from this function:
                     True if required number are selected, false if not.        
     Date of Dev:   
-    Last Rev Date: 01/13/2019
+    Last Rev Date: 06/18/2019
     Revision Notes:
     06/01/2011 - Jason Hatch: Initial creation of the business process.
     01/13/2019 - Kendra Austin: Added validation types BeforeToday, AfterToday, TodayorBefore, and TodayorAfter.
                                 For all passed in dates, ignore time values (as when passing in Date()). Bug fixes for DateBeforeUnit and DateAfterUnit.
+    06/18/2019 - Jason Hatch: Updated so that the comparison will not strip the time values out now that time is allowed for some calendar fields.
 */
 
 if (PassedControlValue && ValidationType) {
@@ -36,14 +37,11 @@ if (PassedControlValue && ValidationType) {
     //Remove the time portion of any date passed in
     var d = new Date();
     var startOfToday = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    var controlValue = new Date(PassedControlValue);
-    var compareValue = new Date();
-    var passedControlValueDateOnly = new Date(controlValue.getFullYear(), controlValue.getMonth(), controlValue.getDate());
+    var passedControlValueDateOnly = new Date(PassedControlValue)
     var comparisonValueDateOnly = new Date();
 
     if (ComparisonValue) {
-        compareValue = new Date(ComparisonValue);
-        comparisonValueDateOnly = new Date(compareValue.getFullYear(), compareValue.getMonth(), compareValue.getDate());
+        comparisonValueDateOnly = new Date(ComparisonValue);
     }
 
     //Use parse to put the values into numeric formats that can be compared.
