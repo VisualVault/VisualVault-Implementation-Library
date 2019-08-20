@@ -25,6 +25,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Last Rev Date: 
      Revision Notes:
      05/14/2019 - Jason Hatch: Script created
+     08/20/2019 - Jason Hatch: Updated to capture error if zipcode not found.
      */
 
     logger.info('Start of the process LibFormCityInformationLookup at ' + Date());
@@ -35,7 +36,8 @@ module.exports.main = function (ffCollection, vvClient, response) {
 
     const request = require('request');
 
-    request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=DEMOAPIKEY', { json: true }, (err, res, body) => {
+    request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=IAOS9DUCUA87IRKX87WB', { json: true }, (err, res, body) => {
+    //request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=DEMOAPIKEY', { json: true }, (err, res, body) => {
 
         if (err) {
             //Error occurred
@@ -52,7 +54,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
             }
             else {
                 var cityResult = JSON.parse(body.trim());
-                if (cityResult.item != 'undefined') {
+                if (cityResult.item != 'undefined' && cityResult.Error != 'ZIP Code Not Found') {
                     var cityObj = {};
                     cityObj.City = cityResult.item.PreferredLastLineName;
                     cityObj.State = cityResult.item.State;
@@ -61,6 +63,11 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     outputArray[0] = 'Success';
                     outputArray[1] = 'Information acquired';
                     outputArray[2] = cityObj;
+                    response.json(200, outputArray);
+                }
+                else if (cityResult.Error != 'ZIP Code Not Found') {
+                    outputArray[0] = 'Error';
+                    outputArray[1] = 'Zip code not found.';
                     response.json(200, outputArray);
                 }
                 else {
