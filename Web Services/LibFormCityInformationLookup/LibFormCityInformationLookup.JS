@@ -2,12 +2,12 @@ var logger = require('../log');
 
 module.exports.getCredentials = function () {
     var options = {};
-    options.customerAlias = "CUSTOMERALIAS";
-    options.databaseAlias = "DATABASEALIAS";
-    options.userId = "USERID";
-    options.password = "PASSWORD";
-    options.clientId = 'DEVELOPERKEY';
-    options.clientSecret = 'DEVELOPERSECRET';
+    options.customerAlias = "VermontMarijuanaReg";
+    options.databaseAlias = "Default";
+    options.userId = "vtmr.api";
+    options.password = "p";
+    options.clientId = '195cd318-3f94-402c-bc79-88df05863463';
+    options.clientSecret = 'qvCwq9oMPbt+RqhXBYC7+cKraFioaegUtAyRrrgwgdo=';
     return options;
 };
 
@@ -22,7 +22,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Psuedo code: 
                 1. API call to www.zip-codes.com to lookup city, state and county information.
      Date of Dev:   05/14/2019
-     Last Rev Date: 08/20/2019
+     Last Rev Date: 
      Revision Notes:
      05/14/2019 - Jason Hatch: Script created
      08/20/2019 - Jason Hatch: Updated to capture error if zipcode not found.
@@ -36,7 +36,8 @@ module.exports.main = function (ffCollection, vvClient, response) {
 
     const request = require('request');
 
-    request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=DEMOAPIKEY', { json: true }, (err, res, body) => {
+    request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=IAOS9DUCUA87IRKX87WB', { json: true }, (err, res, body) => {
+    //request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=DEMOAPIKEY', { json: true }, (err, res, body) => {
 
         if (err) {
             //Error occurred
@@ -53,7 +54,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
             }
             else {
                 var cityResult = JSON.parse(body.trim());
-                if (cityResult.Error != 'undefined') {
+                if (cityResult.Error == 'undefined') {
                     outputArray[0] = 'Error';
                     outputArray[1] = cityResult.Error;
                     response.json(200, outputArray);
