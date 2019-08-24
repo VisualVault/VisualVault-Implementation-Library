@@ -12,24 +12,25 @@
                         measuredValues: An array of objects with Value and Count properties, representing the distinct values found
                                         in the array of fields and the count of how many of those values were found. 
     Date of Dev:   10/01/2018
-    Last Rev Date: 
+    Last Rev Date: 08/24/2019
     Revision Notes:
-    10/01/2018 - Kendra Austin: Initial creation of the business process. 
+    10/01/2018 - Kendra Austin: Initial creation of the business process.
+    08/24/2019 - Kendra Austin: Bug fix. if (x = y) to if (x == y) prevents unintended assignment.
 */
 
 //We'll need an array (of objects) to store the results
 var measuredValues = [];
 
 //Go through each item in the array
-fieldArray.forEach(function(fieldName) {
+fieldArray.forEach(function (fieldName) {
     //declare an object to store the value of the field. This is the object.
     var fieldValue = { Value: '', Count: 1 };
 
     // Get the value of each field, depending on the field type
-    if (fieldType = 'DDText') {
+    if (fieldType == 'DDText') {
         fieldValue.Value = VV.Form.getDropDownListText(fieldName);
     }
-    else if (fieldType = 'DDValue') {
+    else if (fieldType == 'DDValue') {
         fieldValue.Value = VV.Form.GetDropDownListItemValue(fieldName);
     }
     else {
@@ -46,11 +47,11 @@ fieldArray.forEach(function(fieldName) {
         var valueFound = false;
 
         //check if the value is already an object in the measuredValues array
-        measuredValues.forEach(function(fieldItem) {
+        measuredValues.forEach(function (fieldItem) {
             //if it is, increase the count of that object by one and track that you found the object
             if (fieldValue.Value == fieldItem.Value) {
                 fieldItem.Count = fieldItem.Count + 1;
-                valueFound = true; 
+                valueFound = true;
             }
         });
 
