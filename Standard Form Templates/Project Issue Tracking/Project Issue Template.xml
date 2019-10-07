@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="us-ascii"?>
 <FormEntity xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 	<BackgroundColor>#FFFFFFFF</BackgroundColor>
-	<FormTemplateId>e2554e74-e7d0-e911-a9a3-f615c1bebc5e</FormTemplateId>
+	<FormTemplateId>3ac1366b-17e9-e911-a9a3-f615c1bebc5e</FormTemplateId>
 	<FormTemplateChId>6a66a18a-abcd-e911-a9a3-f615c1bebc5e</FormTemplateChId>
 	<CustomerCategoryId>00000000-0000-0000-0000-000000000000</CustomerCategoryId>
 	<Version>4</Version>
@@ -26,7 +26,7 @@
 			<FactoryPageName>Page 1</FactoryPageName>
 			<Version>0</Version>
 			<Width>800</Width>
-			<Height>2150</Height>
+			<Height>2170</Height>
 			<BackgroundColor>#FFFFFFFF</BackgroundColor>
 			<FormCanvasWidth>804</FormCanvasWidth>
 			<FormCanvasHeight>2120</FormCanvasHeight>
@@ -308,7 +308,7 @@
 					<ID>b4c84e3a-7a9b-4e99-9de5-075de6069cd0</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>630</LayoutTop>
+					<LayoutTop>650</LayoutTop>
 					<Name>DataField6</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -360,7 +360,7 @@
 					<ID>10781846-4c76-44ed-9337-8b8bbe8f2fb2</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>660</LayoutTop>
+					<LayoutTop>680</LayoutTop>
 					<Name>DataField7</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -412,7 +412,7 @@
 					<ID>78949634-74a7-4350-b864-4c9c95d4ee64</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>40</LayoutLeft>
-					<LayoutTop>1210</LayoutTop>
+					<LayoutTop>1230</LayoutTop>
 					<Name>DataField8</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -596,7 +596,7 @@
 					<ID>aa660c9c-6d5c-467a-a134-b4fa619bda7d</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>200</LayoutLeft>
-					<LayoutTop>630</LayoutTop>
+					<LayoutTop>650</LayoutTop>
 					<Name>Issue Summary</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -659,7 +659,7 @@
 					<ID>06b93408-7dca-4009-b1b3-8fe79c4f1440</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>680</LayoutTop>
+					<LayoutTop>700</LayoutTop>
 					<Name>Description</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -685,7 +685,9 @@
 					<EnableQListener>false</EnableQListener>
 					<Length>3000</Length>
 					<Rows>4</Rows>
-					<Text />
+					<Text>Form ID: 
+User ID: 
+Issue: </Text>
 					<FontSize>10</FontSize>
 					<Width>703</Width>
 					<Height>291</Height>
@@ -713,7 +715,7 @@
 					<ID>0eca612a-524e-4f92-b30e-3feddaeae560</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>40</LayoutLeft>
-					<LayoutTop>1120</LayoutTop>
+					<LayoutTop>1140</LayoutTop>
 					<Name>DataField13</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -817,7 +819,7 @@
 					<ID>155f400d-5dff-41dc-9691-964c9d33a7f1</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>190</LayoutLeft>
-					<LayoutTop>1120</LayoutTop>
+					<LayoutTop>1140</LayoutTop>
 					<Name>Priority</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -897,7 +899,7 @@
 					<ID>7a61b631-60ff-4242-a5ab-52ebd570b702</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>40</LayoutLeft>
-					<LayoutTop>1156</LayoutTop>
+					<LayoutTop>1176</LayoutTop>
 					<Name>DataField16</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -949,7 +951,7 @@
 					<ID>0628a298-7df1-474c-abb7-107da77c12b3</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>440</LayoutLeft>
-					<LayoutTop>1150</LayoutTop>
+					<LayoutTop>1170</LayoutTop>
 					<Name>DataField17</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1001,7 +1003,7 @@
 					<ID>86051839-0c5c-4ded-bfbd-0bdd393809ad</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>190</LayoutLeft>
-					<LayoutTop>1156</LayoutTop>
+					<LayoutTop>1176</LayoutTop>
 					<Name>Status Lincoln</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1084,7 +1086,7 @@
 					<ID>6d6167cd-68f8-480c-a282-c950768d686a</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>550</LayoutLeft>
-					<LayoutTop>1150</LayoutTop>
+					<LayoutTop>1170</LayoutTop>
 					<Name>Status VV</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1167,7 +1169,7 @@
 					<ID>e66d0371-1a76-44b2-837f-8df72d4a6155</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>40</LayoutLeft>
-					<LayoutTop>1240</LayoutTop>
+					<LayoutTop>1260</LayoutTop>
 					<Name>DataField24</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1362,7 +1364,7 @@
 					<ID>c8eb9c39-5170-46d8-9162-b18d11a02490</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>450</LayoutLeft>
-					<LayoutTop>1000</LayoutTop>
+					<LayoutTop>1020</LayoutTop>
 					<Name>DataField11</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1566,56 +1568,6 @@
 					<Text>e.g.  5.1	Creating a User, Step 4</Text>
 					<Width>257</Width>
 				</BaseField>
-				<BaseField xsi:type="FieldRectangle">
-					<BackgroundColor>0</BackgroundColor>
-					<BackgroundColorString>#FFF0F8FF</BackgroundColorString>
-					<ConnectionString />
-					<Container>0</Container>
-					<ContainerId>8d0b103f-1967-4501-8d16-ec9300770de0</ContainerId>
-					<ContainerLayoutTopOffset>0</ContainerLayoutTopOffset>
-					<ErrorMessage>This field is required</ErrorMessage>
-					<ErrorPIC>~\scripts\error.gif</ErrorPIC>
-					<ExtCcID>00000000-0000-0000-0000-000000000000</ExtCcID>
-					<ExtCqID>00000000-0000-0000-0000-000000000000</ExtCqID>
-					<ExtEnableQuery>false</ExtEnableQuery>
-					<ExternalQuery />
-					<FieldMappings />
-					<FieldToColumnMappingList />
-					<QueryColumnOperatorMappingList />
-					<FieldType>Rectangle</FieldType>
-					<ForeColor>0</ForeColor>
-					<ForegroundColorString>#FF000000</ForegroundColorString>
-					<ID>2be4cf33-f62b-4cec-9f62-b91b1463fee0</ID>
-					<IsRetired>false</IsRetired>
-					<LayoutLeft>20</LayoutLeft>
-					<LayoutTop>210</LayoutTop>
-					<Name>DataField12</Name>
-					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
-					<PrimaryKey />
-					<RenderAsReadOnly>false</RenderAsReadOnly>
-					<RenderValidationError>false</RenderValidationError>
-					<RowID />
-					<Section508Compliant>false</Section508Compliant>
-					<SectionID />
-					<SectionIndex>0</SectionIndex>
-					<TabOrder>0</TabOrder>
-					<UseColor>false</UseColor>
-					<ValidationErrorMessage>This field is required</ValidationErrorMessage>
-					<ValidationErrorPic>~\scripts\error.gif</ValidationErrorPic>
-					<Value />
-					<Version>1</Version>
-					<ZOrder>3</ZOrder>
-					<IsDataReportingColumn>true</IsDataReportingColumn>
-					<IsPrintableField>true</IsPrintableField>
-					<FormVersion>FormVersion1</FormVersion>
-					<AccessibilityLabel />
-					<Width>760</Width>
-					<Height>390</Height>
-					<BorderColorString>#00FFFFFF</BorderColorString>
-					<BorderThickness>0</BorderThickness>
-					<WidthUsePercent>false</WidthUsePercent>
-					<HeightUsePercent>false</HeightUsePercent>
-				</BaseField>
 				<BaseField xsi:type="FieldLabel">
 					<BackgroundColor>0</BackgroundColor>
 					<BackgroundColorString>#00FFFFFF</BackgroundColorString>
@@ -1689,8 +1641,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>1d0dcf29-6adb-486f-a699-1ed2bfb298a7</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>250</LayoutTop>
+					<LayoutLeft>70</LayoutLeft>
+					<LayoutTop>310</LayoutTop>
 					<Name>DataField20</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1718,7 +1670,7 @@
 					<FontSize>10</FontSize>
 					<LabelWrap>false</LabelWrap>
 					<Text>What section and step of the test plan were you on?</Text>
-					<Width>720</Width>
+					<Width>700</Width>
 				</BaseField>
 				<BaseField xsi:type="FieldLabel">
 					<BackgroundColor>0</BackgroundColor>
@@ -1741,8 +1693,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>9f49d51a-5570-4da9-809c-944103b3aac2</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>280</LayoutTop>
+					<LayoutLeft>70</LayoutLeft>
+					<LayoutTop>340</LayoutTop>
 					<Name>DataField21</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1770,7 +1722,7 @@
 					<FontSize>10</FontSize>
 					<LabelWrap>false</LabelWrap>
 					<Text>What browser are you using?</Text>
-					<Width>720</Width>
+					<Width>700</Width>
 				</BaseField>
 				<BaseField xsi:type="FieldLabel">
 					<BackgroundColor>0</BackgroundColor>
@@ -1793,8 +1745,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>65933b89-577e-4d67-b9a0-eb26622e8ba4</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>310</LayoutTop>
+					<LayoutLeft>70</LayoutLeft>
+					<LayoutTop>370</LayoutTop>
 					<Name>DataField23</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1822,7 +1774,7 @@
 					<FontSize>10</FontSize>
 					<LabelWrap>false</LabelWrap>
 					<Text>Upload a screenshot if possible. When taking screenshots, include your entire browser window.</Text>
-					<Width>720</Width>
+					<Width>700</Width>
 				</BaseField>
 				<BaseField xsi:type="FieldLabel">
 					<BackgroundColor>0</BackgroundColor>
@@ -1845,8 +1797,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>525d247e-0599-4f25-844c-485a6b467f1f</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>340</LayoutTop>
+					<LayoutLeft>70</LayoutLeft>
+					<LayoutTop>400</LayoutTop>
 					<Name>DataField26</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1874,7 +1826,7 @@
 					<FontSize>10</FontSize>
 					<LabelWrap>false</LabelWrap>
 					<Text>A detailed description of the issue, including:</Text>
-					<Width>720</Width>
+					<Width>700</Width>
 				</BaseField>
 				<BaseField xsi:type="FieldLabel">
 					<BackgroundColor>0</BackgroundColor>
@@ -1897,8 +1849,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>c341d062-9a89-464c-b361-980a4fee4c35</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>70</LayoutLeft>
-					<LayoutTop>370</LayoutTop>
+					<LayoutLeft>90</LayoutLeft>
+					<LayoutTop>430</LayoutTop>
 					<Name>DataField27</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1926,7 +1878,7 @@
 					<FontSize>10</FontSize>
 					<LabelWrap>false</LabelWrap>
 					<Text>The behavior you observed.</Text>
-					<Width>690</Width>
+					<Width>670</Width>
 				</BaseField>
 				<BaseField xsi:type="FieldLabel">
 					<BackgroundColor>0</BackgroundColor>
@@ -1949,8 +1901,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>a5262c19-e4f3-4e1a-94f0-fc12904f626a</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>70</LayoutLeft>
-					<LayoutTop>400</LayoutTop>
+					<LayoutLeft>90</LayoutLeft>
+					<LayoutTop>460</LayoutTop>
 					<Name>DataField28</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -1978,7 +1930,7 @@
 					<FontSize>10</FontSize>
 					<LabelWrap>false</LabelWrap>
 					<Text>The behavior you expected to observe.</Text>
-					<Width>690</Width>
+					<Width>670</Width>
 				</BaseField>
 				<BaseField xsi:type="FieldLabel">
 					<BackgroundColor>0</BackgroundColor>
@@ -2001,8 +1953,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>09801acf-9e6d-4819-9ec0-22806ee41764</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>70</LayoutLeft>
-					<LayoutTop>430</LayoutTop>
+					<LayoutLeft>90</LayoutLeft>
+					<LayoutTop>490</LayoutTop>
 					<Name>DataField29</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2030,7 +1982,7 @@
 					<FontSize>10</FontSize>
 					<LabelWrap>true</LabelWrap>
 					<Text>Have you been able to re-create the issue, or did it only happen one time and you are not able to make it happen again?</Text>
-					<Width>690</Width>
+					<Width>670</Width>
 				</BaseField>
 				<BaseField xsi:type="FieldLabel">
 					<BackgroundColor>0</BackgroundColor>
@@ -2053,8 +2005,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>5a4809cb-48f5-4f5d-b67d-ca9aa88e580f</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>70</LayoutLeft>
-					<LayoutTop>480</LayoutTop>
+					<LayoutLeft>90</LayoutLeft>
+					<LayoutTop>540</LayoutTop>
 					<Name>DataField30</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2082,7 +2034,7 @@
 					<FontSize>10</FontSize>
 					<LabelWrap>false</LabelWrap>
 					<Text>If you have been able to re-create the issue, what are the steps to re-create it?</Text>
-					<Width>690</Width>
+					<Width>670</Width>
 				</BaseField>
 				<BaseField xsi:type="FieldLabel">
 					<BackgroundColor>0</BackgroundColor>
@@ -2105,8 +2057,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>a5536c89-675c-4a0e-9425-cc061e068149</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>70</LayoutLeft>
-					<LayoutTop>510</LayoutTop>
+					<LayoutLeft>90</LayoutLeft>
+					<LayoutTop>570</LayoutTop>
 					<Name>DataField31</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2134,7 +2086,7 @@
 					<FontSize>10</FontSize>
 					<LabelWrap>true</LabelWrap>
 					<Text>If you are not able to re-create the issue, to the best of your recollection, what steps did you take right before the issue happened?</Text>
-					<Width>690</Width>
+					<Width>670</Width>
 				</BaseField>
 				<BaseField xsi:type="FieldCheckbox">
 					<BackgroundColor>0</BackgroundColor>
@@ -2158,7 +2110,7 @@
 					<ID>cedc2e85-4169-4963-aed6-6cd686cfd62b</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>200</LayoutLeft>
-					<LayoutTop>1930</LayoutTop>
+					<LayoutTop>1950</LayoutTop>
 					<Name>AdminOverride</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2210,7 +2162,7 @@
 					<ID>0d69750f-7e29-424b-bf2d-fc06207d347a</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>570</LayoutLeft>
-					<LayoutTop>1920</LayoutTop>
+					<LayoutTop>1940</LayoutTop>
 					<Name>btnAdminSave</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2285,7 +2237,7 @@
 					<ID>fadd2e77-d7a0-4c5a-ad22-36068f5a2860</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>2020</LayoutTop>
+					<LayoutTop>2040</LayoutTop>
 					<Name>DataField32</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2337,7 +2289,7 @@
 					<ID>8445e669-3ed0-4682-81aa-d839836d340f</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>270</LayoutLeft>
-					<LayoutTop>2040</LayoutTop>
+					<LayoutTop>2060</LayoutTop>
 					<Name>Approve2</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2412,7 +2364,7 @@
 					<ID>7f02465d-0a98-4637-8fea-d382f2adbe3c</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>500</LayoutLeft>
-					<LayoutTop>2040</LayoutTop>
+					<LayoutTop>2060</LayoutTop>
 					<Name>Approve3</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2487,7 +2439,7 @@
 					<ID>f75ff02f-5275-47ca-9aed-d6c7c78f9226</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>2100</LayoutTop>
+					<LayoutTop>2120</LayoutTop>
 					<Name>DataField22</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2539,7 +2491,7 @@
 					<ID>3ac879f3-896a-40ea-847c-9e711e0a5c27</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>150</LayoutLeft>
-					<LayoutTop>2100</LayoutTop>
+					<LayoutTop>2120</LayoutTop>
 					<Name>Status</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2621,7 +2573,7 @@
 					<ID>3e334514-f6de-4607-bf0e-617b560ab701</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>500</LayoutLeft>
-					<LayoutTop>2090</LayoutTop>
+					<LayoutTop>2110</LayoutTop>
 					<Name>Reject3</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2696,7 +2648,7 @@
 					<ID>4fab5582-106f-4e46-8de3-7781384b062d</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>650</LayoutLeft>
-					<LayoutTop>1060</LayoutTop>
+					<LayoutTop>1080</LayoutTop>
 					<Name>btnSubmit</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2771,7 +2723,7 @@
 					<ID>0db3bc6d-9ef0-4ff6-8e23-e281661d9758</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>650</LayoutLeft>
-					<LayoutTop>1810</LayoutTop>
+					<LayoutTop>1830</LayoutTop>
 					<Name>btnResolve</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2846,7 +2798,7 @@
 					<ID>89c01998-e5c6-42e4-adcb-17db867b4f12</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>600</LayoutLeft>
-					<LayoutTop>1860</LayoutTop>
+					<LayoutTop>1880</LayoutTop>
 					<Name>btnAccept</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -2921,7 +2873,7 @@
 					<ID>6e9e4662-a7ac-4400-b556-5221e42d87a9</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>380</LayoutLeft>
-					<LayoutTop>1860</LayoutTop>
+					<LayoutTop>1880</LayoutTop>
 					<Name>btnReject</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3028,7 +2980,7 @@
 				</BaseField>
 				<BaseField xsi:type="FieldContainer">
 					<BackgroundColor>0</BackgroundColor>
-					<BackgroundColorString>#00FFFFFF</BackgroundColorString>
+					<BackgroundColorString>#fff0f8ff</BackgroundColorString>
 					<ConnectionString />
 					<Container>0</Container>
 					<ContainerId>00000000-0000-0000-0000-000000000000</ContainerId>
@@ -3071,7 +3023,7 @@
 					<AccessibilityLabel />
 					<Index>1</Index>
 					<Width>800</Width>
-					<Height>410</Height>
+					<Height>430</Height>
 					<FieldList />
 					<FieldIdList />
 					<Style>0</Style>
@@ -3100,7 +3052,7 @@
 					<ID>8188cf20-1a2a-41f9-b11e-ae093495aeb7</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>0</LayoutLeft>
-					<LayoutTop>610</LayoutTop>
+					<LayoutTop>630</LayoutTop>
 					<Name>con_Details</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3152,7 +3104,7 @@
 					<ID>65f0ae0d-b066-45b1-a00a-8142ab39fdff</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>0</LayoutLeft>
-					<LayoutTop>1050</LayoutTop>
+					<LayoutTop>1070</LayoutTop>
 					<Name>con_Submit</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3204,7 +3156,7 @@
 					<ID>453bb39f-44a3-49b6-92c1-c9dedeb99d6b</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>0</LayoutLeft>
-					<LayoutTop>1100</LayoutTop>
+					<LayoutTop>1120</LayoutTop>
 					<Name>con_Status</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3256,7 +3208,7 @@
 					<ID>7d9ee603-e209-45a2-bcb9-7ca31d732722</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>0</LayoutLeft>
-					<LayoutTop>1200</LayoutTop>
+					<LayoutTop>1220</LayoutTop>
 					<Name>con_Updates</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3308,7 +3260,7 @@
 					<ID>abf6b4e9-1a81-4dbf-9bf7-b6ecabf775b7</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>0</LayoutLeft>
-					<LayoutTop>1800</LayoutTop>
+					<LayoutTop>1820</LayoutTop>
 					<Name>con_Resolve</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3360,7 +3312,7 @@
 					<ID>9330a2a4-ad73-4920-84b3-0678d4072f22</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>0</LayoutLeft>
-					<LayoutTop>1850</LayoutTop>
+					<LayoutTop>1870</LayoutTop>
 					<Name>con_AcceptReject</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3412,7 +3364,7 @@
 					<ID>079f88ac-6038-4864-828a-a65450e72d8b</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>0</LayoutLeft>
-					<LayoutTop>1900</LayoutTop>
+					<LayoutTop>1920</LayoutTop>
 					<Name>con_AdminOverride</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3464,7 +3416,7 @@
 					<ID>739a4ab3-4190-412a-9b4d-0114f8116714</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>0</LayoutLeft>
-					<LayoutTop>2000</LayoutTop>
+					<LayoutTop>2020</LayoutTop>
 					<Name>con_Hidden</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3516,7 +3468,7 @@
 					<ID>bde212d6-f274-aaa0-bc33-cc0776ba6249</ID>
 					<IsRetired>false</IsRetired>
 					<LayoutLeft>430</LayoutLeft>
-					<LayoutTop>1810</LayoutTop>
+					<LayoutTop>1830</LayoutTop>
 					<Name>btnRequestDetails</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3590,8 +3542,8 @@
 					<ForegroundColorString>#FF000000</ForegroundColorString>
 					<ID>805bbbe9-5bd1-1236-0cf0-6d8def8ff433</ID>
 					<IsRetired>false</IsRetired>
-					<LayoutLeft>50</LayoutLeft>
-					<LayoutTop>560</LayoutTop>
+					<LayoutLeft>70</LayoutLeft>
+					<LayoutTop>250</LayoutTop>
 					<Name>Label51</Name>
 					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
 					<PrimaryKey />
@@ -3618,15 +3570,67 @@
 					<EnableQListener>false</EnableQListener>
 					<FontSize>10</FontSize>
 					<LabelWrap>false</LabelWrap>
-					<Text>&lt;b&gt;What is the Form ID of the record you were working on?&lt;/b&gt;</Text>
-					<Width>720</Width>
+					<Text>What is the &lt;b&gt;Form ID&lt;/b&gt; of the record you were working on?</Text>
+					<Width>700</Width>
+				</BaseField>
+				<BaseField xsi:type="FieldLabel">
+					<BackgroundColor>0</BackgroundColor>
+					<BackgroundColorString>#00FFFFFF</BackgroundColorString>
+					<ConnectionString />
+					<Container>0</Container>
+					<ContainerId>8d0b103f-1967-4501-8d16-ec9300770de0</ContainerId>
+					<ContainerLayoutTopOffset>0</ContainerLayoutTopOffset>
+					<ErrorMessage>This field is required</ErrorMessage>
+					<ErrorPIC>~\scripts\error.gif</ErrorPIC>
+					<ExtCcID>00000000-0000-0000-0000-000000000000</ExtCcID>
+					<ExtCqID>00000000-0000-0000-0000-000000000000</ExtCqID>
+					<ExtEnableQuery>false</ExtEnableQuery>
+					<ExternalQuery />
+					<FieldMappings />
+					<FieldToColumnMappingList />
+					<QueryColumnOperatorMappingList />
+					<FieldType>Label</FieldType>
+					<ForeColor>0</ForeColor>
+					<ForegroundColorString>#FF000000</ForegroundColorString>
+					<ID>7b71005a-12bc-160c-fb12-522e6af4a340</ID>
+					<IsRetired>false</IsRetired>
+					<LayoutLeft>70</LayoutLeft>
+					<LayoutTop>280</LayoutTop>
+					<Name>Label52</Name>
+					<PageId>4b27974e-882f-4990-adc0-3451bcb7d964</PageId>
+					<PrimaryKey />
+					<RenderAsReadOnly>false</RenderAsReadOnly>
+					<RenderValidationError>false</RenderValidationError>
+					<RowID />
+					<Section508Compliant>false</Section508Compliant>
+					<SectionID />
+					<SectionIndex>0</SectionIndex>
+					<TabOrder>0</TabOrder>
+					<UseColor>false</UseColor>
+					<ValidationErrorMessage>This field is required</ValidationErrorMessage>
+					<ValidationErrorPic>~\scripts\error.gif</ValidationErrorPic>
+					<Value />
+					<Version>1</Version>
+					<ZOrder>6</ZOrder>
+					<IsDataReportingColumn>true</IsDataReportingColumn>
+					<IsPrintableField>true</IsPrintableField>
+					<FormVersion>FormVersion1</FormVersion>
+					<AccessibilityLabel />
+					<Align>Left</Align>
+					<AssociatedControlID>00000000-0000-0000-0000-000000000000</AssociatedControlID>
+					<Bold>false</Bold>
+					<EnableQListener>false</EnableQListener>
+					<FontSize>10</FontSize>
+					<LabelWrap>false</LabelWrap>
+					<Text>What is the &lt;b&gt;User ID&lt;/b&gt; of the user you were logged in as?</Text>
+					<Width>700</Width>
 				</BaseField>
 			</FieldList>
 			<IsRetired>false</IsRetired>
 		</FormPage>
 	</FormPages>
 	<GroupsHolder>
-		<FormTemplateID>e2554e74-e7d0-e911-a9a3-f615c1bebc5e</FormTemplateID>
+		<FormTemplateID>3ac1366b-17e9-e911-a9a3-f615c1bebc5e</FormTemplateID>
 		<GroupCollection>
 			<Group>
 				<ConditionCollection />
@@ -3980,10 +3984,10 @@
 	<InheritedFormTemplateType>FormTemplate</InheritedFormTemplateType>
 	<InheritedFormTemplateId>00000000-0000-0000-0000-000000000000</InheritedFormTemplateId>
 	<InheritedFormTemplateRevisionId>00000000-0000-0000-0000-000000000000</InheritedFormTemplateRevisionId>
-	<SaveDateTime>2019-09-06T20:47:37Z</SaveDateTime>
+	<SaveDateTime>2019-10-07T15:34:46Z</SaveDateTime>
 	<ScriptLibrary>
 		<FormScriptItem>
-			<ScriptItemId>722c8c4b-0f44-4a7a-a099-011811255adf</ScriptItemId>
+			<ScriptItemId>65e1d232-31c1-45d6-84c7-cb2205c09989</ScriptItemId>
 			<FormChId>00000000-0000-0000-0000-000000000000</FormChId>
 			<Name>CanUserCompleteWFTask</Name>
 			<Arguments>taskId</Arguments>
@@ -4016,7 +4020,7 @@ return $.ajax({
 			<FormTemplateIdList />
 		</FormScriptItem>
 		<FormScriptItem>
-			<ScriptItemId>c72728a6-963e-4ab1-986a-4e77a9daffa1</ScriptItemId>
+			<ScriptItemId>cafdc98e-f124-4982-8717-4ab2dfb6ebf2</ScriptItemId>
 			<FormChId>00000000-0000-0000-0000-000000000000</FormChId>
 			<Name>btnSubmit_onClick</Name>
 			<Arguments>event, control</Arguments>
@@ -4026,7 +4030,7 @@ VV.Form.DoPostbackSave();</Script>
 			<FormTemplateIdList />
 		</FormScriptItem>
 		<FormScriptItem>
-			<ScriptItemId>7acec416-12d5-442d-8a57-002b69235872</ScriptItemId>
+			<ScriptItemId>5af5ea50-7b2d-482c-bced-1a08a39bfb94</ScriptItemId>
 			<FormChId>00000000-0000-0000-0000-000000000000</FormChId>
 			<Name>btnReject_onClick</Name>
 			<Arguments>event, control</Arguments>
@@ -4062,7 +4066,7 @@ VV.Form.Global.DisplayConfirmMessaging(messagedata, 'Confirm', okfunction, cance
 			<FormTemplateIdList />
 		</FormScriptItem>
 		<FormScriptItem>
-			<ScriptItemId>a2c7cadc-bd8f-4d3c-9730-1225977dbf59</ScriptItemId>
+			<ScriptItemId>5e6637e8-9be3-4200-b395-3a8dfac2b123</ScriptItemId>
 			<FormChId>00000000-0000-0000-0000-000000000000</FormChId>
 			<Name>btnResolve_onClick</Name>
 			<Arguments>event, control</Arguments>
@@ -4089,7 +4093,7 @@ VV.Form.Template.CanUserCompleteWFTask(taskId).then(function (resp) {
 			<FormTemplateIdList />
 		</FormScriptItem>
 		<FormScriptItem>
-			<ScriptItemId>2a45811a-3555-4655-b165-780da4926558</ScriptItemId>
+			<ScriptItemId>2e532100-fea0-4963-9877-23f8134dd77f</ScriptItemId>
 			<FormChId>00000000-0000-0000-0000-000000000000</FormChId>
 			<Name>btnAccept_onClick</Name>
 			<Arguments>event, control</Arguments>
@@ -4125,7 +4129,7 @@ VV.Form.Global.DisplayConfirmMessaging(messagedata, 'Confirm', okfunction, cance
 			<FormTemplateIdList />
 		</FormScriptItem>
 		<FormScriptItem>
-			<ScriptItemId>9ea8ac35-710c-4a1a-98a1-a9fc0a686d98</ScriptItemId>
+			<ScriptItemId>643b0289-ef33-443b-bf2f-d4a6d520ad89</ScriptItemId>
 			<FormChId>00000000-0000-0000-0000-000000000000</FormChId>
 			<Name>btnRequestDetails_onClick</Name>
 			<Arguments>event, control</Arguments>
@@ -4154,46 +4158,46 @@ VV.Form.Template.CanUserCompleteWFTask(taskId).then(function (resp) {
 	</ScriptLibrary>
 	<ScriptAssignments>
 		<FormScriptAssignment>
-			<ScriptAssignmentId>76073b94-85c8-489e-afea-cf2f40a5b19e</ScriptAssignmentId>
+			<ScriptAssignmentId>55d58e54-fa8e-460b-ad77-471b64c43a66</ScriptAssignmentId>
 			<FormTemplateId>00000000-0000-0000-0000-000000000000</FormTemplateId>
-			<ScriptItemId>c72728a6-963e-4ab1-986a-4e77a9daffa1</ScriptItemId>
-			<ControlId>4fab5582-106f-4e46-8de3-7781384b062d</ControlId>
-			<EventId>4</EventId>
-			<DefinedFormTemplateId>00000000-0000-0000-0000-000000000000</DefinedFormTemplateId>
-			<DefinedTemplateRevision>1</DefinedTemplateRevision>
-		</FormScriptAssignment>
-		<FormScriptAssignment>
-			<ScriptAssignmentId>1631a866-50df-466c-a107-8ae94f8a290b</ScriptAssignmentId>
-			<FormTemplateId>00000000-0000-0000-0000-000000000000</FormTemplateId>
-			<ScriptItemId>2a45811a-3555-4655-b165-780da4926558</ScriptItemId>
-			<ControlId>89c01998-e5c6-42e4-adcb-17db867b4f12</ControlId>
-			<EventId>4</EventId>
-			<DefinedFormTemplateId>00000000-0000-0000-0000-000000000000</DefinedFormTemplateId>
-			<DefinedTemplateRevision>1</DefinedTemplateRevision>
-		</FormScriptAssignment>
-		<FormScriptAssignment>
-			<ScriptAssignmentId>e258267f-c82d-49c7-a9f2-2a06e344ca3c</ScriptAssignmentId>
-			<FormTemplateId>00000000-0000-0000-0000-000000000000</FormTemplateId>
-			<ScriptItemId>7acec416-12d5-442d-8a57-002b69235872</ScriptItemId>
-			<ControlId>6e9e4662-a7ac-4400-b556-5221e42d87a9</ControlId>
-			<EventId>4</EventId>
-			<DefinedFormTemplateId>00000000-0000-0000-0000-000000000000</DefinedFormTemplateId>
-			<DefinedTemplateRevision>1</DefinedTemplateRevision>
-		</FormScriptAssignment>
-		<FormScriptAssignment>
-			<ScriptAssignmentId>93990a79-0c75-4367-9e92-fb8b19a9da6a</ScriptAssignmentId>
-			<FormTemplateId>00000000-0000-0000-0000-000000000000</FormTemplateId>
-			<ScriptItemId>9ea8ac35-710c-4a1a-98a1-a9fc0a686d98</ScriptItemId>
+			<ScriptItemId>643b0289-ef33-443b-bf2f-d4a6d520ad89</ScriptItemId>
 			<ControlId>bde212d6-f274-aaa0-bc33-cc0776ba6249</ControlId>
 			<EventId>4</EventId>
 			<DefinedFormTemplateId>00000000-0000-0000-0000-000000000000</DefinedFormTemplateId>
 			<DefinedTemplateRevision>1</DefinedTemplateRevision>
 		</FormScriptAssignment>
 		<FormScriptAssignment>
-			<ScriptAssignmentId>2d7816d0-4b9f-4df1-9c13-2047b302dd84</ScriptAssignmentId>
+			<ScriptAssignmentId>95ac9f38-3250-4428-b5e6-100173c5cc66</ScriptAssignmentId>
 			<FormTemplateId>00000000-0000-0000-0000-000000000000</FormTemplateId>
-			<ScriptItemId>a2c7cadc-bd8f-4d3c-9730-1225977dbf59</ScriptItemId>
+			<ScriptItemId>5e6637e8-9be3-4200-b395-3a8dfac2b123</ScriptItemId>
 			<ControlId>0db3bc6d-9ef0-4ff6-8e23-e281661d9758</ControlId>
+			<EventId>4</EventId>
+			<DefinedFormTemplateId>00000000-0000-0000-0000-000000000000</DefinedFormTemplateId>
+			<DefinedTemplateRevision>1</DefinedTemplateRevision>
+		</FormScriptAssignment>
+		<FormScriptAssignment>
+			<ScriptAssignmentId>a3029bac-7ff4-4859-9d11-50472fa555d4</ScriptAssignmentId>
+			<FormTemplateId>00000000-0000-0000-0000-000000000000</FormTemplateId>
+			<ScriptItemId>2e532100-fea0-4963-9877-23f8134dd77f</ScriptItemId>
+			<ControlId>89c01998-e5c6-42e4-adcb-17db867b4f12</ControlId>
+			<EventId>4</EventId>
+			<DefinedFormTemplateId>00000000-0000-0000-0000-000000000000</DefinedFormTemplateId>
+			<DefinedTemplateRevision>1</DefinedTemplateRevision>
+		</FormScriptAssignment>
+		<FormScriptAssignment>
+			<ScriptAssignmentId>80de8e00-4128-44b3-9222-e9a40a89393a</ScriptAssignmentId>
+			<FormTemplateId>00000000-0000-0000-0000-000000000000</FormTemplateId>
+			<ScriptItemId>5af5ea50-7b2d-482c-bced-1a08a39bfb94</ScriptItemId>
+			<ControlId>6e9e4662-a7ac-4400-b556-5221e42d87a9</ControlId>
+			<EventId>4</EventId>
+			<DefinedFormTemplateId>00000000-0000-0000-0000-000000000000</DefinedFormTemplateId>
+			<DefinedTemplateRevision>1</DefinedTemplateRevision>
+		</FormScriptAssignment>
+		<FormScriptAssignment>
+			<ScriptAssignmentId>7e21fa7f-578f-472c-aaed-6b21fbf04b39</ScriptAssignmentId>
+			<FormTemplateId>00000000-0000-0000-0000-000000000000</FormTemplateId>
+			<ScriptItemId>cafdc98e-f124-4982-8717-4ab2dfb6ebf2</ScriptItemId>
+			<ControlId>4fab5582-106f-4e46-8de3-7781384b062d</ControlId>
 			<EventId>4</EventId>
 			<DefinedFormTemplateId>00000000-0000-0000-0000-000000000000</DefinedFormTemplateId>
 			<DefinedTemplateRevision>1</DefinedTemplateRevision>
