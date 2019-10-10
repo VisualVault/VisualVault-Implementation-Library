@@ -13,7 +13,7 @@
     Last Rev Date: 10/10/2019
 
     Revision Notes:
-               - Jason Hatch: Initial creation of the business process. 
+    12/07/2018 - Jason Hatch: Initial creation of the business process. 
     10/10/2019 - Jason Hatch: Add header.
 */
 var birthDate = new Date(birthdate);
