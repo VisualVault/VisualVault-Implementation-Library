@@ -1,4 +1,21 @@
-//Admin Save
+/*
+    Script Name:   AdminSave
+    Customer:      VisualVault
+    Purpose:       This function checks if the Admin Override is still checked and reminds users to uncheck and save.  
+    Parameters:    The following represent variables passed into the function:  
+                   No Parameters
+
+    Return Value:  The following represents the value being returned from this function:
+                        No Information returned       
+
+
+    Date of Dev:   10/07/2019
+    Last Rev Date: 
+
+    Revision Notes:
+    10/07/2019 - Kendra Austin: Initial creation of the business process. 
+
+*/
 var okfunction = function () {
     VV.Form.DoPostbackSave();
 }
