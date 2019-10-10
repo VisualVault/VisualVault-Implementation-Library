@@ -11,7 +11,7 @@ var cancelfunction = function () {
     return;
 }
 
-if (showMessage == 'No') {
+if (showMessage == 'No' || typeof(showMessage) != 'undefined') {
     HandleFormWindowClosing(true);
 }
 else {
