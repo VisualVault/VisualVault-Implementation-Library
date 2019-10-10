@@ -1,4 +1,21 @@
-//Pass in the date of birth and date where age should be calculated.  birthdate, dateatage
+/*
+    Script Name:   CalculateAge
+    Customer:      VisualVault
+    Purpose:       This function takes in the birthdate and date for calculating age.  
+    Parameters:    The following represent variables passed into the function:  
+                   birthdate, dateatage:         date as a string from getfieldvalue.
+
+    Return Value:  The following represents the value being returned from this function:
+                        days:  Returns a number that represents the age.        
+
+
+    Date of Dev:   
+    Last Rev Date: 10/10/2019
+
+    Revision Notes:
+               - Jason Hatch: Initial creation of the business process. 
+    10/10/2019 - Jason Hatch: Add header.
+*/
 var birthDate = new Date(birthdate);
 
 today_date = new Date(dateatage);
