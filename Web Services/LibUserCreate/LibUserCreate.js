@@ -52,7 +52,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
         9. The system will then take the security permissions that the user has entered and will add that security permission for the user on that folder.
      
      Date of Dev:   12/4/2018
-     Last Rev Date: 01/18/2019
+     Last Rev Date: 12/05/2019
 
      Revision Notes:
      12/04/2018 - Alex Rhee: Initial creation of the business process.
@@ -60,6 +60,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      12/20/2018 - Alex Rhee: Script is now fully functional and adding folder securities works. Need to now clean up code and test further.
      01/02/2019 - Alex Rhee: Script has been cleaned up, commented, bug tested.
      01/18/2019 - Alex Rhee: Made sure all API calls are being measured by Resp.meta.status === 200.
+     12/05/2019 - Kendra Austin: Add hyphen (-) to list of allowed characters in user ID.
      */
 
     logger.info('Start of the process UserCreate at ' + Date());
@@ -79,7 +80,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
     var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
 
     //Possible characters for User ID
-    var possibleChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.@+";
+    var possibleChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.@+-";
 
     //Force the user to input security permissions when passing in folder paths, if set to true an error will be sent back if the user passes in a folder but no folder security or an invalid folder security
     var forceSecurities = true;
