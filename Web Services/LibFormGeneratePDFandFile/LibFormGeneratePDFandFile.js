@@ -17,14 +17,54 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Customer:      VisualVault
      Purpose:       This process will create a pdf of a form, upload the pdf to a folder (creating the folder structure if it does not exist) and update index fields
      Parameters:    The following represent variables passed into the function:
+                    formId - (string, Required) Form ID of the current form record. Used to load the ID and Description of the document.
+                    formTemplateId - (string, Required) GUID of the form template relating to the form record that will be converted to PDF.
+                    revisionId - (string, Required) GUID of the current form record.
+                    folderPath - (string, Required) folder path in the document library where the PDF will be stored.
+                    indexFields - (array of objects, Required) index fields that should be populated.
 
-                    formId - Used to load the ID and Description of the document.
-                    formTemplateId - GUID of the form template relating to the form record that will be converted to PDF.
-                    revisionId - GUID of the current form record.
-                    folderPath - folder path in the document library where the PDF will be stored.
-                    indexFields - index fields that should be populated.
+                    Example format:
+                    var generatePDFdata = [];
 
+                    var formIdObj = {};
+                    formIdObj.name = 'formId';
+                    formIdObj.value = FormID;
+                    generatePDFdata.push(formIdObj);
 
+                    var formTemplateIdObj = {};
+                    formTemplateIdObj.name = 'formTemplateId';
+                    formTemplateIdObj.value = IDCardTemplateGUID;
+                    generatePDFdata.push(formTemplateIdObj);
+
+                    var formIdObj = {};
+                    formIdObj.name = 'revisionId';
+                    formIdObj.value = RevisionID;
+                    generatePDFdata.push(formIdObj);
+
+                    var formIdObj = {};
+                    formIdObj.name = 'folderPath';
+                    formIdObj.value = CardType + '/' + getAlphabeticalFolder(LastName) + '/' + LastName + ', ' + FirstName + ' - ' + DOB;
+                    generatePDFdata.push(formIdObj);
+
+                    //Populate index field data
+                    var indexFields = [];
+
+                    indexField = {};
+                    indexField.name = "First Name";
+                    indexField.value = FirstName;
+                    indexFields.push(indexField);
+
+                    indexField = {};
+                    indexField.name = "Last Name";
+                    indexField.value = LastName;
+                    indexFields.push(indexField);
+
+                    var indexFieldObj = {};
+                    indexFieldObj.name = 'indexFields';
+                    indexFieldObj.value = indexFields;
+                    generatePDFdata.push(indexFieldObj);
+
+                    return vvClient.scripts.runWebService('LibFormGeneratePDFandFile', generatePDFdata)
 
      Process PseudoCode:
                     1. Validate information passed into the function.
@@ -36,18 +76,18 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     7. Upload the PDF of the form using postFile
                     8. Relate the document to the form it originated from.
                     9. Respond back to the calling function with success or failure.
-
      Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
                      Any item in the array at points 2 or above can be used to return multiple items of information.
                      0 - Status: 'Success' or 'Error'
                      1 - Message
                      2 - If an error occurred.
      Date of Dev:   11/12/2017
-     Last Rev Date: 11/12/2017
-
+     Last Rev Date: 12/10/2019
+     
      Revision Notes:
      11/12/2017 - Austin Noel: Initial creation of the business process.
      02/07/2018 - Austin Noel: Added hasError property on the return object to more easily distinguish when the PDF may have been generated successfully, but an error still occurred during the process
+     12/10/2019 - Kendra Austin: Update header info. 
      */
 
     logger.info('Start of the process LibFormGeneratePDFandFile at ' + Date());
