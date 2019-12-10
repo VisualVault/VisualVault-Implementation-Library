@@ -18,7 +18,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Purpose:       Get a list User IDs, First Name, Last Name and Email addresses for all users who are in a VisualVault Location.
                     Commonly used to get list of all email addresses for a provider.
      Parameters:    The following represent variables passed into the function:
-                    Site ID = the id of the service provider used to lookup the VisualVault Location.
+                    Site ID = (string, Required) the id of the service provider used to lookup the VisualVault Location.
 
      Process PseudoCode:
                     1. Get the Site for the Site ID passed in.
