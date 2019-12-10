@@ -19,18 +19,19 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Customer:      VisualVault Library Function
      Purpose:       The purpose of this script is to grab a group of form records and sort them by one or two columns.
      Parameters:
-                    1. FormName - the template ID of the form to get
-                    2. QueryVar - String that contains the query for the getForms call
-                    3. ColumnsArray - An array of columns to be sorted on (can pass in 1 or 2 columns). If 2 columns passed in, array will be sorted by the first column and then by the second. The strings in the array should start with a lower case letter. ex. ['dispensary ID', 'card Expire Record']
+                    1. Form Name - (string, Required) the template ID of the form to get
+                    2. Query - (string, Required) String that contains the query for the getForms call
+                    3. Sort Columns - (array, Required) An array of columns to be sorted on (can pass in 1 or 2 columns). If 2 columns passed in, array will be sorted by the first column and then by the second. The strings in the array should start with a lower case letter. ex. ['dispensary ID', 'card Expire Record']
      Psuedo code:   
                     1. Call getForms() to grab a specific set of forms. Query passed in by user.
                     2. Sort the array of form objects by the passed in user columns (by one or two columns).
                     3. Send back the new sorted array to the client/user.
-
      Date of Dev:   03/07/2019
-     Last Rev Date: 03/08/2019
+     Last Rev Date: 12/10/2019
+
      Revision Notes:
      03/08/2019 - Alex Rhee: Initial creation of the business process.
+     12/10/2019 - Kendra Austin: Update header info. 
     */
 
     logger.info('Start of the process LibFormGetFormsAndSort at ' + Date());
