@@ -2,12 +2,12 @@ var logger = require('../log');
 
 module.exports.getCredentials = function () {
     var options = {};
-    options.customerAlias = "VermontMarijuanaReg";
-    options.databaseAlias = "Default";
-    options.userId = "vtmr.api";
-    options.password = "p";
-    options.clientId = '195cd318-3f94-402c-bc79-88df05863463';
-    options.clientSecret = 'qvCwq9oMPbt+RqhXBYC7+cKraFioaegUtAyRrrgwgdo=';
+    options.customerAlias = "CUSTOMERALIAS";
+    options.databaseAlias = "DATABASEALIAS";
+    options.userId = "USERID";
+    options.password = "PASSWORD";
+    options.clientId = "DEVELOPERKEY";
+    options.clientSecret = "DEVELOPERSECRET";
     return options;
 };
 
@@ -15,29 +15,37 @@ module.exports.main = function (ffCollection, vvClient, response) {
     /*Script Name:   LibFormCityInformationLookup
      Customer:      VisualVault
      Purpose:       The purpose of this process is acquire city, state and county information based on zip code.  
-     Parameter:     Zip Code
+     Parameter:     Zip Code - (string, Required)
      Response:      [0] - Success or Error
                     [1] - Message
                     [2] - Address information object
      Psuedo code: 
                 1. API call to www.zip-codes.com to lookup city, state and county information.
      Date of Dev:   05/14/2019
-     Last Rev Date: 
+     Last Rev Date: 12/10/2019
+
      Revision Notes:
      05/14/2019 - Jason Hatch: Script created
      08/20/2019 - Jason Hatch: Updated to capture error if zipcode not found.
+     12/10/2019 - Kendra Austin: Make key a configurable variable for adding this script to Implementation Library. 
      */
 
     logger.info('Start of the process LibFormCityInformationLookup at ' + Date());
 
+    //Configurable variables.
+    var key = '';                           //Add the API key here. 
+    //End Configurable variables
+
+    //Script Variables
     var outputArray = [];
+
     //Create variables for the values the user inputs
     var zipCode = ffCollection.getFormFieldByName('ZipCode').value;
 
     const request = require('request');
 
-    request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=IAOS9DUCUA87IRKX87WB', { json: true }, (err, res, body) => {
-    //request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=DEMOAPIKEY', { json: true }, (err, res, body) => {
+    request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=' + key, { json: true }, (err, res, body) => {
+        //request('https://api.zip-codes.com/ZipCodesAPI.svc/1.0/GetZipCodeDetails/' + zipCode + '?key=DEMOAPIKEY', { json: true }, (err, res, body) => {
 
         if (err) {
             //Error occurred
