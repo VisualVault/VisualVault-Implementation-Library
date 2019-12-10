@@ -21,15 +21,36 @@ module.exports.main = function (ffCollection, vvClient, response) {
       Customer:      For Global Use
       Purpose:       The purpose of this library is to create a communication log form that will be used to send emails or record other communications.
       Parameters:    The following represent variables passed into the function:
-                            COMMUNICATIONTYPE – This passes in the type of communication that will occur.  Value should be Email.
-                            EMAILTYPE – This will indicate if the item is an immediate or digest type email.
-                            RECIPIENTS – These are the recipients who will receive the communication.  Should be a comma separated list of email addresses.
-                            RECIPIENTSCC – These are the carbon copied CCed recipients. Should be a comma separated list of email addresses.
-                            SUBJECT – This is the subject of the notification.
-                            BODY – This is the body of the communication.
-                            RELATETORECORD – This is an array of Form IDs that this communication log should be related to in the system.
-                            SCHEDULEDSENDDATETIME – This is the date and time when communication should be sent.  Date format should be an ISO format.
-                            APPROVEDTOSEND – This is an indicator if the communication is approved to be sent immediately or not.  Value should be Yes as approved or No as not approved.
+                            COMMUNICATIONTYPE – (string, Required) This passes in the type of communication that will occur.  Value should be 'Email'
+                            EMAILTYPE – (string, Required) This will indicate if the item is an immediate or digest type email.
+                            RECIPIENTS – (string, Required) These are the recipients who will receive the communication.  Should be a comma-separated list of email addresses.
+                            RECIPIENTSCC – (string, Not required) These are the carbon copied CCed recipients. Should be a comma separated list of email addresses.
+                            SUBJECT – (string, Required) This is the subject of the notification.
+                            BODY – (string, Required) This is the body of the communication.
+                            RELATETORECORD – (array, Required) This is an array of Form IDs that this communication log should be related to in the system.
+                            SCHEDULEDSENDDATETIME – (date, Required) This is the date and time when communication should be sent.  Date format should be an ISO format: new Date().toISOString()
+                            APPROVEDTOSEND – (string, Required) This is an indicator if the communication is approved to be sent immediately or not.  Value should be Yes as approved or No as not approved.
+                            OTHERFIELDSTOUPDATE - (object, Required) This is an object of field names with field values to update on the Communications Log.
+
+                            Example format:
+                            let communicationLogObj = [
+                                { name: 'COMMUNICATIONTYPE', value: 'Email' },
+                                { name: 'EMAILTYPE', value: 'Immediate Send' },
+                                { name: 'RECIPIENTS', value: email },
+                                { name: 'RECIPIENTSCC', value: '' },
+                                { name: 'SUBJECT', value: sub },
+                                { name: 'BODY', value: body },
+                                { name: 'RELATETORECORD', value: [formId, indivId] },
+                                { name: 'APPROVEDTOSEND', value: 'Yes' },
+                                { name: 'SCHEDULEDSENDDATETIME', value: new Date().toISOString() },
+                                {
+                                    name: 'OTHERFIELDSTOUPDATE', value: {
+                                        "Individual ID": indivId,
+                                        "Record ID": formId
+                                    }
+                                }
+                            ];
+
       Process PseudoCode:   1.  Validate that the information passed is correct and present.
                             2.  Prepare the postform process.
                             3.  Post the form to VisualVault
@@ -42,12 +63,13 @@ module.exports.main = function (ffCollection, vvClient, response) {
                      2 - Created Communication Log Form ID
                      3 - Created Communication Log Revision ID
       Date of Dev:   05/17/2019
-      Last Rev Date: 08/05/2019
+      Last Rev Date: 12/10/2019
  
       Revision Notes:
       05/17/2019: Jason Hatch - Initial creation of the business process.
       05/29/2019: Kendra Austin - Update to accept an array of Form IDs in RELATETORECORD and send back comm log form ID and revision ID.
       08/05/2019: Kendra Austin - Convert scheduled send date to Eastern time before posting the communication log form.
+      12/10/2019: Kendra Austin - Updated header info and comments for inclusion in Implementation Library. 
         
       */
 
