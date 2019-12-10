@@ -22,14 +22,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
                      or depending on input QUERY parameters, a batch of forms may be updated.  The ACTION passed in determines if the process will create or
                      update forms.  Once the form is created or updated, it will be relate to the passed in form represented by the REVISIONID. 
       Parameters:    The following represent variables passed into the function:
-                        REVISIONID - String: The revision id (GUID) of the existing form or form to relate the new/updated form to.
-                        ACTION - String: A value of either 'Post' or 'Update' depending on whether you want to post a new form or update an 
+                        REVISIONID - (string, Required) The revision id (GUID) of the existing form or form to relate the new/updated form to.
+                        ACTION - (string, Required) A value of either 'Post' or 'Update' depending on whether you want to post a new form or update an
                                  existing form.
-                        TARGETTEMPLATENAME - String: The template name of the target form to be updated or created.
-                        TARGETFORMID - String: If ACTION = 'Update,' the revision ID (GUID) of the target form. Not required if ACTION = 'Post'
-                        QUERY - Object: If ACTION = 'Update,' and TARGETFORMID is not provided, use the query to find multiple forms to update 
+                        TARGETTEMPLATENAME - (string, Required) The template name of the target form to be updated or created.
+                        TARGETFORMID - (string, Conditionally required) If ACTION = 'Update,' the revision ID (GUID) of the target form. Not required if ACTION = 'Post'
+                        QUERY - (object, Conditionally required) If ACTION = 'Update,' and TARGETFORMID is not provided, use the query to find multiple forms to update
                                 and relate each to parent form. If ACTION = 'Update,' either TARGETFORMID or QUERY is required, but not both.
-                        UPDATEFIELDS - An object of target field names to update with specified values. Accepts one object only.
+                        UPDATEFIELDS - (object, Required) An object of target field names to update with specified values. Accepts one object only.
       Process PseudoCode:   1. Validate the passed in parameters and extract values. Aggregate error messages into one string so that user can be 
                                informed of all issues at once.
                                 a. REVISIONID, ACTION, TARGETTEMPLATENAME, and UPDATEFIELDS are required.
@@ -53,18 +53,18 @@ module.exports.main = function (ffCollection, vvClient, response) {
                                b. On success completion of foreach(), add information to the returnObj
                                     i. returnObj[2] will be an array of objects with four properties: dataType, href, instanceName, and revisionId
                             8. return response.json(returnObj) followed by the standard Catch block
-
       Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.  
                      Any item in the array at points 2 or above can be used to return multiple items of information.
                      0 - Status: 'Success' or 'Error'
                      1 - Message
                      2 - On Success, returns the form data object(s) of the posted form or updated form(s)
       Date of Dev:   11/19/2018
-      Last Rev Date: 01/16/2019
+      Last Rev Date: 12/10/2019
  
       Revision Notes:
       11/19/2018: Kendra Austin - Initial creation of the business process.
-      01/16/2018: Kednra Austin - for relateForms calls, 404 means relation already exists. Allow script to continue past this.
+      01/16/2018: Kendra Austin - for relateForms calls, 404 means relation already exists. Allow script to continue past this.
+      12/10/2019: Kendra Austin - Update header info.
         
       */
 
