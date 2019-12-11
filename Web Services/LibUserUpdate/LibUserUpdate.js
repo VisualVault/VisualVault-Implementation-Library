@@ -1,4 +1,5 @@
 var logger = require('../log');
+var Q = require('q');
 
 module.exports.getCredentials = function () {
     var options = {};
@@ -12,535 +13,382 @@ module.exports.getCredentials = function () {
 };
 
 module.exports.main = function (ffCollection, vvClient, response) {
-    /*Script Name:   LibUserUpdate
+    /*Script Name:  LibUserUpdate
      Customer:      Visual Vault
-     Purpose:       The purpose of this NodeJS process will allow a user to be updated with various potential options.  Those options will be turned on or off depending on what is passed to the NodeJS process.  
-     Parameters: The following represent variables passed into the function:
-                    User Id - String
-                    Site Name - String
-                    First Name - String
-                    Last Name - String
-                    Email Address - String
-                    GroupList - String of groups seperated by commas
-                    RemoveGroupList - String of groups seperated by commas
-                    UserDisabled - Boolean
+     Purpose:       The purpose of this NodeJS process will allow a user to be updated with various potential options.  Those options will be turned on or off depending on what is passed to the NodeJS process.
+                    NOTE: The username of a user cannot be changed with this script. It must be updated manually in the Control Panel.
+                          Passwords cannot be changed with this script. Code is commented out in previous versions of this script on GitHub; to be used when the API is updated. 
+                          User sites cannot be changed with this script. 
 
-     Psuedo code: 
-        1. Call getUser and see if the user ID exists and send back the user GUID if it exists
-        2. Determine what information the user wants to change and load that info into a new user object.
-        3. Send the new user object through putUsersEndpoint to update the user information
-        4. Determine whether or not the users has passed groups in the group list or remove group list and if they have, call getGroups.
-        5. Using the information sent back from getGroups() determine whether the groups passed by the user exist and then either add or remove those groups depending on what list they were in.
+     Parameters: The following represent variables passed into the function:
+                    Action - (string, Required) 'Update', 'Disable', or 'Enable' This parameter will control which actions this script takes.
+                    User GUID - (string, conditionally Required) This is the UsID (GUID) of the user. It is required when Action = 'Enable'
+                    User ID - (string, Required) This is the user name of the user.
+                    First Name - (string, not Required) When provided, this information will be updated in the user profile. Not updated when Action = 'Disable'
+                    Middle Initial - (string, not Required) When provided, this information will be updated in the user profile. Not updated when Action = 'Disable'
+                    Last Name - (string, not Required) When provided, this information will be updated in the user profile. Not updated when Action = 'Disable'
+                    Email Address - (string, not Required) When provided, this information will be updated in the user profile. Not updated when Action = 'Disable'
+                    Group List - (string, not Required) String of group names separated by commas. The user will be assigned to these groups.
+                    Remove Group List - (string, not Required) String of group names separated by commas. The user will be removed from these groups.
+
+     Psuedo code:
+        1. Validate parameter inputs to ensure the combination is valid. 
+        2. Assess which action the script should take.
+                a. If Disable, only disable the account.
+                b. If Enable, enable then update account.
+                c. If Update, only update the account.
+        3. Enable the user account if needed. This allows us to get the site ID later and update the user if needed.
+        4. Call getUser and see if the user ID exists and send back the user GUID if it exists.
+        5. Disable the user account if needed. Immediately return a reponse; no further actions taken.
+        6. Determine what information the user wants to change and load that info into a user update object.
+        7. Send the user update object through putUsers to update the user information.
+        8. Determine if user email address should be chnaged and load that info into an email update object.
+        9. Send the email update object through putUsersEndpoint to update the user email address information.
+        10. If Group List or Remove Group List were passed in as parameters, call getGroups to ensure they exist.
+        11. Add the groups in Group List.
+        12. Remove the groups in Remove Group List.
 
      Date of Dev:   12/4/2018
-     Last Rev Date: 1/18/19
+     Last Rev Date: 12/10/2019
+
      Revision Notes:
      12/20/2018 - Alex Rhee: Initial creation of the business process.
      1/3/19 - Alex Rhee: Process created and working. Passwords cannot be changed at this time.
      1/18/19 - Alex Rhee: Made sure all API calls are being measured by Resp.meta.status === 200
+     12/10/2019 - Kendra Austin: Update to include user enable & disable; update header; bug fixes. 
      */
 
-    logger.info('Start of the process UpdateUser at ' + Date());
-    var Q = require('q');
-
+    logger.info('Start of the process LibUserUpdate at ' + Date());
 
     //---------------CONFIG OPTIONS---------------
-
-    //The following section contains password configuration variables.
-    var PasswordLength = 8;
-
-    //Minimum length for password
-    var minPasswordLength = 5;
-
-    //Possible characters for password
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
 
 
     //------------------END OPTIONS----------------
 
-
-    //The following is a function to randomly generate passwords.
-    var RandomPassword = function () {
-        var text = "";
-
-        for (var i = 0; i < PasswordLength; i++)
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
-
-        return text;
-    };
-
-    //Create variables for the values the user inputs when creating their User
-    var NewUsrID = ffCollection.getFormFieldByName('User ID');
-    // var NewSiteName = ffCollection.getFormFieldByName('Site Name');
+    //Parameter Variables
+    var action = ffCollection.getFormFieldByName('Action');
+    var userGUID = ffCollection.getFormFieldByName('User GUID');
+    var userID = ffCollection.getFormFieldByName('User ID');
     var NewFirstName = ffCollection.getFormFieldByName('First Name');
     var NewLastName = ffCollection.getFormFieldByName('Last Name');
     var NewMiddleInitial = ffCollection.getFormFieldByName('Middle Initial');
     var NewEmail = ffCollection.getFormFieldByName('Email Address');
-    // var NewPwd = ffCollection.getFormFieldByName('Password');
     var groupList = ffCollection.getFormFieldByName('Group List');
     var removeGroupList = ffCollection.getFormFieldByName('Remove Group List');
 
-    //Hard coded variables for user inputs
-    var NewUserExpire = {};
-    NewUserExpire.value = 'false';
-    var NewPassExpire = {};
-    NewPassExpire.value = 'false';
-
-    // //Admin options for User Creation
-    var userDisabled = ffCollection.getFormFieldByName('User Disabled')
-    var userEnabled = ffCollection.getFormFieldByName('User Enabled')
-    // var changePassword = ffCollection.getFormFieldByName('Change Password');
-    // var resetPassword = ffCollection.getFormFieldByName('Reset Password');
-    // var sendEmail = ffCollection.getFormFieldByName('Send Email');
-    // var emailMessage = ffCollection.getFormFieldByName('Email Message');
-
-    //Array to hold all the group names that the user has input.
-    var groupArrayUntrimmed = groupList.value.split(",");
-    var removeGroupArrayUntrimmed = removeGroupList.value.split(",");
-
-    //Trim any extra spaces into a new group array
-    var groupArrayTrimmer = function (groupArg) {
-        arrayHolder = [];
-        for (i = 0; i < groupArg.length; i++) {
-            arrayHolder.push(groupArg[i].trim());
-        }
-        return arrayHolder;
-    }
-    //Variable to hold the new trimmed array
-    var groupArray = groupArrayTrimmer(groupArrayUntrimmed);
-    var removeGroupArray = groupArrayTrimmer(removeGroupArrayUntrimmed);
-
-    //Function to extract all groups in the groups that exist
-    var groupComparison = function (arr1, arr2) {
-        var finalarray = [];
-        arr1.forEach((e1) => arr2.forEach((e2) => {
-            if (e1 === e2) {
-                finalarray.push(e1)
-            }
-        }
-        ));
-        return finalarray;
-    };
-
-    //Function to validate that all the groups in the group list exist
-    var groupValidator = function arraysEqual(arr1, arr2) {
-        if (arr1.length !== arr2.length)
-            return false;
-        for (var i = arr1.length; i--;) {
-            if (arr1[i] !== arr2[i])
-                return false;
-        }
-        return true;
-    }
-
-    var outputCollection = [];                                          //Variable used to return information back to the client.
-    var emailHolder = NewEmail.value;                                   //Variable that holds user email
+    //Script Variables
+    var returnObj = [];                                                 //Variable used to return information back to the client
+    var errorArray = [];                                                //Array to hold error messages
+    var siteID = '';                                                    //Variable to hold site GUID
+    var currentFirstName = '';                                          //Variable to hold the current user profile info; to compare with new info and determine if update needed
+    var currentLastName = '';                                           //Variable to hold the current user profile info; to compare with new info and determine if update needed
+    var currentMiddleInitial = '';                                      //Variable to hold the current user profile info; to compare with new info and determine if update needed
+    var currentEmailAddress = '';                                       //Variable to hold the current user profile info; to compare with new info and determine if update needed
     var groupOption = false;                                            //Variable for determining whether user wants to add groups
     var removeGroupOption = false;                                      //Variable for determining whether user wants to remove groups
-    var SiteInfo = '';                                                  //Variable to hold site GUID
-    var groupIdArray = [];                                              //Array for group GUIDs
-    var removeGroupIdArray = [];                                        //Array for remove group GUIDs
-    var groupData = '';                                                 //Variable to hold parse group response data
-    var userGUID = '';                                                  //Variable to hold userGUID
-    var NusrData = {};                                                  //New user data object
-    var NusrObj = {};                                                   //New user data object for updating emails specifically
-    var NusrDisableObj = {};                                            //New user data object for disabling user specifically
-    var usrParam = {};                                                  //Empty user param object
-    var errorArray = [];                                                //Array to hold error messages
-    var groupRespHolder;                                                //Variable to save the group response for removing groups
-    var groupValidation = false;                                        //Variable that holds the group validation results.
+    var currentGroups = [];                                             //Variable to hold current site groups
 
-    //Promise for searching user
-    var searchUser = function () {
-        //Set up query for the getUser() API call
-        var currentUserdata = {};
-        currentUserdata.q = "[name] eq '" + NewUsrID.value + "'";
-        currentUserdata.fields = "id,name,userid,siteid,firstname,lastname,emailaddress";
+    //Start the promise chain
+    var result = Q.resolve();
 
-        return vvClient.users.getUser(currentUserdata);
-    }
+    return result.then(function () {
 
+        //Validate passed in fields
+        if (!action || !action.value) {     //Action is always required
+            errorArray.push("The Action parameter was not supplied.")
+        }
+        else if (action.value != 'Enable' && action.value != 'Update' && action.value != 'Disable') {
+            errorArray.push("The Action parameter must be Enable, Disable, or Update.");
+        }
+        else {
+            action = action.value;
+        }
 
-    //Combined promise that holds both searchSite() and searchUser() promises
-    var prelimSearch = Promise.all([searchUser()]);
+        if (!userID || !userID.value) {     //User ID (username) is always required.
+            errorArray.push("The User ID parameter was not supplied.")
+        }
+        else {
+            userID = userID.value;
+        }
 
-    prelimSearch
-        .then(
-            function (promises) {
+        if (action == 'Enable') {
+            if (!userGUID || !userGUID.value) {     //User GUID is required when Action = Enable
+                errorArray.push("The User GUID parameter must be supplied to enable a user.")
+            }
+            else {
+                userGUID = userGUID.value;
+            }
+        }
 
-                //Variable that holds the search user results
-                var promiseUser = promises[0];
-                //Variable that holds the parsed user data
-                var userData = JSON.parse(promiseUser);
+        //Return all validation errors at once.
+        if (errorArray.length > 0) {
+            throw new Error(errorArray);
+        }
+    })
+        .then(function () {
+            //If enable is needed, do that first. This allows us to get the site ID later and update the user if needed. 
+            if (action == 'Enable') {
+                var userEnableObj = {};
+                userEnableObj.enabled = 'true';
 
+                return vvClient.users.putUsersEndpoint({}, userEnableObj, userGUID).then(function (enableResp) {
+                    //Measure the response & send a response to the client
+                    if (enableResp.meta.status == 200) {
+                        logger.info('User enabled successfully. User ID ' + userID + '.');
+                    }
+                    else {
+                        throw new Error('Attempt to enable the user account encountered an error.')         //TODO: Add status message?
+                    }
+                });
+            }
+        })
+        .then(function () {
+            //Call getUser and see if the user ID exists. Get user GUID and site GUID if existing.
+            var currentUserdata = {};                       //Set up query for the getUser() API call
+            currentUserdata.q = "[name] eq '" + userID + "'";
+            currentUserdata.fields = "id,name,userid,siteid,firstname,lastname,middleinitial,emailaddress";
+
+            return vvClient.users.getUser(currentUserdata).then(function (userPromise) {
+                var userData = JSON.parse(userPromise);
                 if (userData.meta.status == 200) {
                     //Test to see if the user exists or needs to be created
                     if (typeof (userData.data[0]) == 'undefined') {
-                        logger.info('User not found for ID: ' + NewUsrID.value + '.');
-                        throw new Error('Error: User not found for ID: ' + NewUsrID.value + '.')
+                        throw new Error('Error: User not found for ID: ' + userID + '.')
                     }
                     else {
-                        logger.info('User found for ID: ' + NewUsrID.value + '.');
+                        logger.info('User found for ID: ' + userID + '.');
+                        userGUID = userData.data[0].id;
+                        siteID = userData.data[0].siteid;
+                        currentFirstName = userData.data[0].firstname;
+                        currentLastName = userData.data[0].lastname;
+                        currentMiddleInitial = userData.data[0].middleinitial;
+                        currentEmailAddress = userData.data[0].emailaddress;
                     }
                 }
                 else {
-                    throw new Error('There was an error when searching for the user')
+                    throw new Error('There was an error when searching for the user ' + userID + '.');
                 }
-
-                //Update site data
-                SiteInfo = userData.data[0].siteid;
-                //Update the user GUID
-                userGUID = userData.data[0].id;
-
-                //Make sure information should be updated or not. 
-
-                // // Section commented out because username/userID cannot be changed throught he API at this time
-                // if (NewUsrID.value != '') {
-                //     NusrData.userid = NewUsrID.value;
-                // }
-
-                if (NewFirstName.value != '') {
-                    NusrData.firstname = NewFirstName.value;
-                }
-
-                if (NewLastName.value != '') {
-                    NusrData.lastname = NewLastName.value;
-                }
-
-                if (NewMiddleInitial.value != '') {
-                    NusrData.middleinitial = NewMiddleInitial.value;
-                }
-
-                if (NewEmail.value != '') {
-                    // NusrData.emailaddress = NewEmail.value;
-                    NusrObj.emailaddress = NewEmail.value;
-                    emailHolder = NewEmail.value;
-                }
-                else {
-                    emailHolder = userData.data[0].emailaddress;
-                }
-
-                if (userDisabled.value != '') {
-                    if (userDisabled.value == 'true') {
-                        // NusrData.enabled = 'false';
-                        NusrDisableObj.enabled = 'false';
-                    }
-                    else {
-                        // NusrData.enabled = 'true';
-                        NusrDisableObj.enabled = 'true';
-                    }
-                }
-
-                // // Section commented until the API is able to update user passwords directly
-                // if (changePassword.value == 'true') {
-                //     if (NewPwd.value == ' ' || !NewPwd.value) {
-                //         NusrData.password = RandomPassword();
-                //     }
-                //     else {
-                //         if (NewPwd.value.length >= minPasswordLength) {
-                //             NusrData.password = NewPwd.value;
-                //         }
-                //         else {
-                //             throw new Error("New password must be more than " + minPasswordLength + " characters.")
-                //         }
-                //     }
-                // }
-
-                // if (resetPassword.value == 'true') {
-                //     NusrData.mustChangePassword = 'true';
-                // }
-
-                return vvClient.users.putUsers(usrParam, NusrData, SiteInfo, userGUID);
-            }
-        )
-        .then(
-            //When an email value is input, this will make an API call to change the user email
-            function (updateUserResp) {
-                // //Measure the response of the putUsers call
-                // if (updateUserResp.meta.status != 200) {
-                //     throw new Error('There was an error when trying to update the user.')
-                // }
-                if (NewEmail.value != '') {
-                    return vvClient.users.putUsersEndpoint(usrParam, NusrObj, userGUID);
-                }
-                else {
-                    return;
-                }
-
-            }
-        )
-        .then(
-            //When a user status is selected (disabled), an API call will be made to change the user status
-            function (updateUserEmail) {
-                // //Measure the response of the putUsersEndpoint call
-                // if (updateUserEmail.meta.status != 200) {
-                //     throw new Error('There was an error when trying to update the user.')
-                // }
-                if (userDisabled.value != '') {
-                    return vvClient.users.putUsersEndpoint(usrParam, NusrDisableObj, userGUID);
-                }
-                else {
-                    return;
-                }
-
-            }
-        )
-        .then(
-            function (updateUserResp2) {
-                // //Measure the response of the putUsersEndpoint call
-                // if (updateUserResp2.meta.status != 200) {
-                //     throw new Error('There was an error when trying to update the user.')
-                // }
-                //Determine whether or not any groups were passedin the groupList or removeGroupList for calling getGroups()
-                if ((groupList.value == ' ' || !groupList.value) && (removeGroupList.value == ' ' || !removeGroupList.value)) {
-                    return false;
-                }
-                else {
-                    groupOption = true;
-                    removeGroupOption = true;
-                    //If groups are passed through by the user to be added groupOption becomes true
-                    if (groupList.value == ' ' || !groupList.value) {
-                        groupOption = false;
-                    }
-                    //If groups are passed through by the user to be removed removeGroupOption becomes true
-                    if (removeGroupList.value == ' ' || !removeGroupList.value) {
-                        removeGroupOption = false;
-                    }
-
-                    var groupParam = {};
-                    groupParam.q = "";
-                    groupParam.fields = 'id,name,description';
-
-                    //Function to get groups from within the given site
-                    return vvClient.groups.getGroups(groupParam);
-                }
-            }
-        )
-        .then(
-            function (groupResp) {
-
-                //Save the group resp for removing groups in the next then statement
-                groupRespHolder = groupResp;
-
-                //If groups were passed into the groupList determine if they exist on the site and then add the user to them
-                if (groupResp != false && groupOption == true) {
-
-                    //Variable to hold the parsed group data
-                    groupData = JSON.parse(groupResp);
-
-                    //Measure the getGroups call
-                    if (groupData.meta.status == '200') {
-
-                        //Create an array of group names from the results
-                        var groupNameExtract = function () {
-                            var groupNameExtractHolder = []
-                            for (i = 0; i < groupData.data.length; i++) {
-                                groupNameExtractHolder.push(groupData.data[i].name)
-                            }
-                            return groupNameExtractHolder;
-                        }
-                        //Variable to hold the extracted group names array
-                        var groupDataArray = groupNameExtract();
-                        //Variable that calls the group comparison function and holds the results
-                        var groupComparisonResults = groupComparison(groupArray, groupDataArray);
-                        //Variable that calls the group validator function and holds the results. Will be true if all groups passed in the group list exist.
-                        groupValidation = groupValidator(groupArray, groupComparisonResults);
-
-                        //Function to extract the ID's of passed groups into an array
-                        for (i = 0; i < groupData.data.length; i++) {
-                            if (groupArray.length == 1) {
-                                if (groupArray[0] == groupData.data[i].name) {
-                                    groupIdArray.push(groupData.data[i].id)
-                                }
-                            }
-                            else {
-                                for (j = 0; j < groupArray.length; j++) {
-                                    if (groupArray[j] == groupData.data[i].name) {
-                                        groupIdArray.push(groupData.data[i].id)
-                                    }
-                                }
-                            }
-                        }
-
-                        if (groupValidation == true) {
-                            GroupID = groupData.data[0].id;
-
-                            //Params for add user to group
-                            var groupParams = {};
-
-                            var addGroupProcess = Q.resolve();
-
-                            //Add the user to each of the groups in the groupIdArray
-                            groupIdArray.forEach(function (groupItem) {
-                                addGroupProcess = addGroupProcess.then(function () {
-                                    return vvClient.groups.addUserToGroup(groupParams, groupItem, userGUID);
-                                })
-                            })
-
-                            return addGroupProcess;
-                        }
-                        else if (groupValidation == false) {
-                            logger.info('There was an error when adding the user to a group. User may have already been part of the group.');
-                            errorArray.push('There was an error when adding the user to a group. User may have already been part of the group.');
-                        }
-                    }
-                    else {
-                        logger.info('There was an error when searching for groups.');
-                        errorArray.push('There was an error when searching for groups.');
-                    }
-                }
-                else {
-                    return;
-                }
-                //If no groups were passed through
-                if (groupResp == false) {
-                    return;
-                }
-
-                //Check if there are any errors
-                if (errorArray.length > 0) {
-                    throw new Error(errorArray);
-                }
-
-            })
-        .then(
-            function () {
-
-                //If groups were passed into the removeGroupOption, determine if they exist and remove the user from those groups
-                if (groupRespHolder != false && removeGroupOption == true) {
-
-                    //Variable to hold the parsed group data
-                    groupData = JSON.parse(groupRespHolder);
-
-                    //Measure the getGroups call
-                    if (groupData.meta.status == '200') {
-
-                        //Create an array of group names from the results
-                        var groupNameExtract = function () {
-                            var groupNameExtractHolder = []
-                            for (i = 0; i < groupData.data.length; i++) {
-                                groupNameExtractHolder.push(groupData.data[i].name)
-                            }
-                            return groupNameExtractHolder;
-                        }
-                        //Variable to hold the extracted group names array
-                        var groupDataArray = groupNameExtract();
-                        //Variable that calls the group comparison function and holds the results
-                        var groupComparisonResults = groupComparison(removeGroupArray, groupDataArray);
-                        //Variable that calls the group validator function and holds the results. Will be true if all groups passed in the group list exist.
-                        groupValidation = groupValidator(removeGroupArray, groupComparisonResults);
-
-                        //Function to extract the ID's of passed groups into an array
-                        for (i = 0; i < groupData.data.length; i++) {
-                            if (removeGroupArray.length == 1) {
-                                if (removeGroupArray[0] == groupData.data[i].name) {
-                                    removeGroupIdArray.push(groupData.data[i].id)
-                                }
-                            }
-                            else {
-                                for (j = 0; j < removeGroupArray.length; j++) {
-                                    if (removeGroupArray[j] == groupData.data[i].name) {
-                                        removeGroupIdArray.push(groupData.data[i].id)
-                                    }
-                                }
-                            }
-                        }
-
-                        if (groupValidation == true) {
-                            GroupID = groupData.data[0].id;
-
-                            //Params for add user to group
-                            var groupParams = {};
-
-                            var removeGroupProcess = Q.resolve();
-
-                            removeGroupIdArray.forEach(function (groupItem) {
-                                removeGroupProcess = removeGroupProcess.then(function () {
-                                    return vvClient.groups.removeUserFromGroup(groupParams, groupItem, userGUID);
-                                })
-                            })
-
-                            return removeGroupProcess;
-                        }
-                        else if (groupValidation == false) {
-                            logger.info('There was an error removing the user from a group.');
-                            errorArray.push('There was an error removing the user from a group.');
-                        }
-                    }
-                    else {
-                        logger.info("Didn't find a unique group for the provider site");
-                        errorArray.push('No unique group found.');
-                    }
-                }
-                else {
-                    return;
-                }
-                //If no groups were passed through
-                if (groupRespHolder == false) {
-                    return;
-                }
-
-                //Check if there are any errors
-                if (errorArray.length > 0) {
-                    throw new Error(errorArray);
-                }
-
-            })
-        // //Email logic commented out until user passwords can be updated directly through the API
-        // .then(
-        //     function () {
-        //         //send and email with the username
-        //         if (changePassword.value == 'true') {
-
-        //                 var ToField = emailHolder;
-        //                 //Set the subject and body of the email below
-        //                 var SubjectField = 'Your account has been updated.';
-        //                 var BodyField = "User account " + NewUsrID.value + " has been updated.";
-        //                 //Load the object used in the function call. 
-        //                 var emailData = {};
-        //                 emailData.recipients = ToField;
-        //                 emailData.subject = SubjectField;
-        //                 emailData.body = BodyField;
-        //                 var emailParams = '';
-
-        //                 return vvClient.email.postEmails(emailParams, emailData);
-        //         }
-        //     }
-        // )
-        //         .then(
-        //     function () {
-        //         //send an email with the password token
-        //         if (changePassword.value == 'true') {
-
-        //                 var ToField = emailHolder;
-        //                 //Set the subject and body of the email below
-        //                 var SubjectField = 'Your account has been updated.';
-        //                 var BodyField = "New password: [" + NusrData.password + "]";
-        //                 //Load the object used in the function call. 
-        //                 var emailData = {};
-        //                 emailData.recipients = ToField;
-        //                 emailData.subject = SubjectField;
-        //                 emailData.body = BodyField;
-        //                 var emailParams = '';
-
-        //                 return vvClient.email.postEmails(emailParams, emailData);
-        //         }
-        //     }
-        // )
-        .then(
-            function () {
-                outputCollection[0] = 'Success';
-                outputCollection[1] = 'User updated.';
-                outputCollection[2] = userGUID;
-                response.json(200, outputCollection);
-            }
-        )
-        .catch(function (exception) {
-            logger.info(exception);
-            outputCollection[0] = 'Error';
-            outputCollection.push('The following error was encountered when creating a user ' + exception);
-            response.json(200, outputCollection);
-            return false;
+            });
         })
+        .then(function () {
+            //Disable the user account if needed. Immediately return a reponse; no further actions taken.
+            if (action == 'Disable') {
+                var userDisableObj = {};
+                userDisableObj.enabled = 'false';
 
+                return vvClient.users.putUsersEndpoint({}, userDisableObj, userGUID).then(function (disableResp) {
+                    //Measure the response & send a response to the client
+                    if (disableResp.meta.status == 200) {
+                        returnObj[0] = 'Success';
+                        returnObj[1] = 'User account disabled.';
+                        returnObj[2] = userGUID;
+                        return response.json(returnObj);
+                    }
+                    else {
+                        throw new Error('Attempt to disable the user account encountered an error.')        //TODO: Add status message?
+                    }
+                });
+            } 
+        })
+        .then(function () {
+            //Determine what information the user wants to change and load that info into an update object
+            var userUpdateObj = {};
+
+            if (NewFirstName.value && NewFirstName.value != '' && NewFirstName.value != currentFirstName) {
+                userUpdateObj.firstname = NewFirstName.value;
+            }
+
+            if (NewLastName.value && NewLastName.value != '' && NewLastName.value != currentLastName) {
+                userUpdateObj.lastname = NewLastName.value;
+            }
+
+            if (NewMiddleInitial.value && NewMiddleInitial.value != '' && NewMiddleInitial.value != currentMiddleInitial) {
+                userUpdateObj.middleinitial = NewMiddleInitial.value;
+            }
+
+            //Check if anything needs to be updated
+            if (userUpdateObj.firstname || userUpdateObj.lastname || userUpdateObj.middleinitial) {
+                //if update needed, send the user update object through putUsers to update the user information
+                return vvClient.users.putUsers({}, userUpdateObj, siteID, userGUID).then(function (updateResp) {
+                    if (updateResp.meta.status == 200) {
+                        logger.info('User updated successfully. User ID ' + userID + '.');
+                    }
+                    else {
+                        throw new Error('Attempt to update the user account encountered an error.')         //TODO: Add status message?
+                    }
+                });
+            }
+        })
+        .then(function () {
+            //Determine if the email address needs to be changed. If so, load that info into a new email object.
+            var emailUpdateObj = {};    //New user data object for updating emails specifically
+
+            if (NewEmail.value && NewEmail.value != '' && NewEmail.value != currentEmailAddress) {
+                emailUpdateObj.emailaddress = NewEmail.value;
+            }
+
+            //Check if the email address needs to be updated
+            if (emailUpdateObj.emailaddress) {
+                //if update needed, send the email update object through putUsersEndpoint to update the email information
+                return vvClient.users.putUsersEndpoint({}, emailUpdateObj, userGUID).then(function (emailUpdateResp) {
+                    if (emailUpdateResp.meta.status == 200) {
+                        logger.info('User email address updated successfully. User ID ' + userID + '.');
+                    }
+                    else {
+                        throw new Error('Attempt to update the user email address encountered an error.')         //TODO: Add status message?
+                    }
+                });
+            }
+        })
+        .then(function () {
+            //If Group List or Remove Group List were passed in as parameters, call getGroups to ensure they exist.
+            if (groupList.value && groupList.value != '' && groupList.value != ' ') {
+                groupList = groupList.value.split(",");
+                groupOption = true;
+            }
+
+            if (removeGroupList.value && removeGroupList.value != '' && removeGroupList.value != ' ') {
+                removeGroupList = removeGroupList.value.split(",");
+                removeGroupOption = true; 
+            }
+
+            //Only get groups if something is going to be added or removed
+            if (groupOption || removeGroupOption) {
+                var groupParam = {};
+                groupParam.q = "";
+                groupParam.fields = 'id,name,description';
+
+                //Function to get all current groups
+                return vvClient.groups.getGroups(groupParam).then(function (groupResp) {
+                    var groupData = JSON.parse(groupResp);
+                    if (groupData.meta.status === 200) {
+                        if (groupData.data.length > 0) {
+                            //Push the group data into an array for processing
+                            groupData.data.forEach(function (group) {
+                                currentGroups.push(group);
+                            });
+                        }
+                        else {
+                            throw new Error('No groups were found to exist.');
+                        }
+                    }
+                    else {
+                        throw new Error('There was an error when searching for groups');            //TODO: Add status message?
+                    }
+                });
+            }
+        })
+        .then(function () {
+            //Add the groups in Group List.
+            if (groupOption) {
+                //For each item in groupList, trim it, then make sure it's mapped to a group in currentGroups. If it is, call addUserToGroup. 
+                var addGroupProcess = Q.resolve();
+
+                //Add the user to each of the groups in the groupIdArray
+                groupList.forEach(function (addGroupItem) {
+                    addGroupProcess = addGroupProcess.then(function () {
+                        //Set groupData to blank and groupFound to false. 
+                        var groupData = {};
+                        var groupFound = false; 
+
+                        //Go through each current group and see if one of them is the group being added
+                        currentGroups.forEach(function (currentGroup) {
+                            if (currentGroup.name == addGroupItem.trim()) {
+                                groupData = currentGroup;
+                                groupFound = true;
+                            }
+                        });
+
+                        //If the group wasn't found after looping through all current groups, log an error
+                        if (!groupFound) {
+                            errorArray.push('The group ' + addGroupItem.trim() + ' could not be added to the user profile because the group was not found.');
+                        }
+                        else {
+                            //If the group was found, then add it to the user profile.
+                            return vvClient.groups.addUserToGroup({}, groupData.id, userGUID).then(function (groupAddResp) {
+                                var addGroupRespObj = JSON.parse(groupAddResp);
+                                //201 is success; 400 means the user is already part of the group. Both are successful results.
+                                if (addGroupRespObj.meta.status === 201 || addGroupRespObj.meta.status === 400) {
+                                    logger.info('User added to group ' + groupData.name + ' successfully.');
+                                }
+                                else {
+                                    logger.info('Call to add user to group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
+                                    errorArray.push('Call to add user to group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
+                                }
+                            })
+                        }
+                    })
+                });
+
+                return addGroupProcess; 
+            }
+        })
+        .then(function () {
+            //Remove the groups in Remove Group List.
+            if (removeGroupOption) {
+                //For each item in removeGroupList, trim it, then make sure it's mapped to a group in currentGroups. If it is, call removeUserFromGroup.
+                var removeGroupProcess = Q.resolve();
+
+                //Add the user to each of the groups in the groupIdArray
+                removeGroupList.forEach(function (removeGroupItem) {
+                    removeGroupProcess = removeGroupProcess.then(function () {
+                        //Set groupData to blank and groupFound to false. 
+                        var groupData = {};
+                        var groupFound = false;
+
+                        //Go through each current group and see if one of them is the group being added
+                        currentGroups.forEach(function (currentGroup) {
+                            if (currentGroup.name == removeGroupItem.trim()) {
+                                groupData = currentGroup;
+                                groupFound = true;
+                            }
+                        });
+
+                        //If the group wasn't found after looping through all current groups, log an error
+                        if (!groupFound) {
+                            errorArray.push('The group ' + removeGroupItem.trim() + ' could not be removed from the user profile because the group was not found.');
+                        }
+                        else {
+                            //If the group was found, then add it to the user profile.
+                            return vvClient.groups.removeUserFromGroup({}, groupData.id, userGUID).then(function (groupRemoveResp) {
+                                var removeGroupRespObj = JSON.parse(groupRemoveResp);
+                                if (removeGroupRespObj.meta.status === 200) {
+                                    logger.info('User removed from group ' + groupData.name + ' successfully.');
+                                }
+                                else {
+                                    logger.info('Call to remove user from group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
+                                    errorArray.push('Call to remove user from group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
+                                }
+                            })
+                        }
+                    })
+                });
+
+                return removeGroupProcess; 
+            }
+        })
+        .then(function () {
+            if (errorArray.length > 0) {
+                throw new Error('The user groups may not have been fully updated. ' + errorArray);
+            }
+
+            //If here, then everything was successful
+            returnObj[0] = 'Success';
+            returnObj[1] = 'User updated.';
+            returnObj[2] = userGUID;
+            return response.json(returnObj);
+        })
+        .catch(function (err) {
+            logger.info(JSON.stringify(err));
+
+            returnObj[0] = 'Error';
+
+            if (err && err.message) {
+                returnObj[1] = err.message;
+            } else {
+                returnObj[1] = "An unhandled error has occurred. The message returned was: " + err;
+            }
+
+            return response.json(returnObj);
+        });
 }
