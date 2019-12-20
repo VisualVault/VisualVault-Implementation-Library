@@ -1,4 +1,7 @@
 var logger = require('../log');
+var Q = require('q');
+var moment = require('moment');
+var momentTz = require('moment-timezone');
 
 module.exports.getCredentials = function () {
     var options = {};
@@ -13,742 +16,741 @@ module.exports.getCredentials = function () {
 
 module.exports.main = function (ffCollection, vvClient, response) {
     /*Script Name:   LibUserCreate
-     Customer:      VisualVault
-     Purpose:       The purpose of this NodeJS process will allow a user to be created with various potential options.  Those options will be turned on or off depending on what is passed to the NodeJS process.  
+     Customer:      Visual Vault
+     Purpose:       This process will allow a user to be created with various potential options.
+                    Those options will be turned on or off depending on what is passed to the NodeJS process.
      Parameters: The following represent variables passed into the function from an array:
-                User Id - String
-                Site Name - String
-                First Name - String
-                Middle Initial - String
-                Last Name - String
-                Email Address - String
-                Password - String (if blank, random password will be generated)
-                Group List - String of groups seperated by commas
-                Change Password - Boolean
-                Send Email - Boolean
-                Folder Path - String
-                Folder Permissions - String
-                SubjectField1 - String, subject of the username email
-                SubjectField2 - String, subject of password info email
-                BodyField1 - String, body of username email
-                BodyField2 - String, body of password info email
+                User Id - (String, Required)
+                Email Address - (String, Required)
+                Site Name - (String, Required)
+                Group List - (String, Required) String of groups separated by commas
+                First Name - (String, Optional)
+                Middle Initial - (String, Optional)
+                Last Name - (String, Optional)
+                Password - (String, Optional) If blank or not passed in, random password will be generated
+                Folder Path - (String, Optional) If blank or not passed in, a folder will not be created.
+                Folder Permissions - (String, Optional unless folder path was provided and config variable forceSecurities set to true.) Pass in 'Viewer', 'Editor', or 'Owner'
+                    'Viewer' - The created user account will be assigned viewer permissions to the created folder
+                    'Editor' - The created user account will be assigned editor permissions to the created folder
+                    'Owner' - The created user account will be assigned owner permissions to the created folder
+                Send Email - (String, Required) Pass in 'Standard', 'Custom', or 'Both'.
+                    'Standard' will send only the VV-generated username and password email.
+                    'Custom' allows Email Subject and Email Body to be passed in.
+                    'Both' will send both the VV-generated email and the custom email passed in.
+                Email Subject - (String, Required when Send Email is Custom or Both) Subject of the username and password email
+                Email Body - (String, Required when Send Email is Custom or Both) Body of username and password email.
+                              When Send Email is 'Custom', [Username] and [Password] must be included in the email body.
+                Related Records - (Array of Strings, optional) The Form IDs of any records that the Communication Log should be related to. 
+         
+    Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
+                Any item in the array at points 2 or above can be used to return multiple items of information.
+                0 - Status: Success, Minor Error, Error
+		        1 - Message
+                2 - User GUID
+                3 - Site ID
+
      Psuedo code: 
-        1. Validate if the character's passed in the User ID are valid and if valid run prelim search.
-        2. Prelim search will then search for the user and site passed by user.
+        1. Validate passed in parameters
+        2. Search for the user ID provided to see if the user already exists.
             a. If user already exists, process will end and notify user of the duplicate.
-            b. If site already exists then it will save the SiteID pass that on.
-            c. If site does not exists then it will create a site by running postSite
-        3. If site already existed, then the groups passed in by the user will be searched within the site by getGroups
-            a. If the site did not exist then the Site ID will be passed to the next function
-        4. Validation will check if the groups passed in by the user exist on the site.
-            a. If they dont then process will end and send the user an error message.
-            b. If they do exist or if the user did not pass any groups in, user creation will start.
-        5. During user validation passwords will be validated based on allowed characters and minimum length.
-            a. Function will check the options on whether to force user to change password on first login
-            b. It will also check whether to send an email on user creation and whether to send a custom email.
-        6. After user creation runs, the user will be added to the correct groups.
-        7. Custom emails will then be sent if that option was chosen.
-        8. If user has entered a folder path, then the system will search for the folder and create a new folder if it does not already exist.
-        9. The system will then take the security permissions that the user has entered and will add that security permission for the user on that folder.
-     
+        3. Search the Site Name passed in to determine if it exists.
+                    a. If site already exists then it will save the SiteID pass that on.
+                    b. If site does not exist then it will create a site by running postSite
+        4. If groups were passed in, check if the groups exist using getGroups.
+            a. If any of the groups do not exist, process will end and notify user of the error.
+        5. Start of user creation logic. If a random password needs to be generated, do it now.
+        6. Create the user account by calling postUsers.
+            a. If this step is completed successfully, any handled errors occurring later in the code are pushed into the error array and returned as minor errors. 
+               Once the user has been created, want to be sure the user GUID and site ID are passed back so user creation is reflected on the form record.
+        7. If groups were passed in, add the user to groups using addUserToGroup.
+        8. If a custom email needs to be sent to the created user, send it using postEmails.
+        9. If a communications log needs to be created to reflect the welcome email, create it with postForms.
+            a. Relate the created communication log to each Form ID in the relateToRecords array.
+        10. If user has entered a folder path, determine if a folder exists in the destination location, to prevent duplication. Call getFolders.
+            a. If the folder was not found, create the folder suing postFolderByPath.
+            b. Add security permission for the user on that folder.
+        11. If all steps above completed successfully, check if any errors were logged in the error array.
+            a. If minor errors occurred, return ‘Minor Error’ with details.
+            b. If no errors, return ‘Success’
+
      Date of Dev:   12/4/2018
-     Last Rev Date: 12/05/2019
+     Last Rev Date: 12/19/2019
 
      Revision Notes:
      12/04/2018 - Alex Rhee: Initial creation of the business process.
      12/18/2018 - Alex Rhee: Code reorganized and rewritten to follow promise chaining examples. Still missing folder provisioning.
      12/20/2018 - Alex Rhee: Script is now fully functional and adding folder securities works. Need to now clean up code and test further.
-     01/02/2019 - Alex Rhee: Script has been cleaned up, commented, bug tested.
-     01/18/2019 - Alex Rhee: Made sure all API calls are being measured by Resp.meta.status === 200.
-     12/05/2019 - Kendra Austin: Add hyphen (-) to list of allowed characters in user ID.
+     1/2/19 - Alex Rhee: Script has been cleaned up, commented, bug tested.
+     1/18/19 - Alex Rhee: Made sure all API calls are being measured by Resp.meta.status === 200.
+     09/25/2019 - Removed uppercase I and lowercase L at customer request.
+     12/19/2019 - Kendra Austin: Script rewrite. Add hyphen (-) to user ID chars, add configuration to use or not use Comm Log, send only one custom email.
      */
 
     logger.info('Start of the process UserCreate at ' + Date());
 
-    var Q = require('q');
-
-
     //---------------CONFIG OPTIONS---------------
-
-    //The following section contains password configuration variables.
-    var PasswordLength = 8;
-
-    //Minimum length for password
-    var minPasswordLength = 5;
-
     //Possible characters for password
-    var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+    var passwordChars = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!@#$%^&*()_+";
 
-    //Possible characters for User ID
-    var possibleChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.@+-";
+    //Allowed characters for User ID
+    var userNameChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.@+-";
 
-    //Force the user to input security permissions when passing in folder paths, if set to true an error will be sent back if the user passes in a folder but no folder security or an invalid folder security
-    var forceSecurities = true;
+    var PasswordLength = 8;                                 //Password length when a random password is generated
+    var minPasswordLength = 5;                              //Minimum length for password when one is passed in to be used.
+    var forceSecurities = true;                             //Force the user to input security permissions when passing in folder paths, if set to true an error will be sent back if the user passes in a folder but no folder security or an invalid folder security. If false and not passed in, folder is created without security. 
+    var SysChangePass = 'true';                             //Require user to change password on first login. Set to 'true' for required; set to 'false' for not required.
+    var createCommLog = true;                               //Dictates whether a communication log is created to reflect the custom welcome email sent to the user. Passwords are redacted.
+    var commLogTemplateID = 'Communications Log';           //When createCommLog is true, this is the template name of the Communications Log. Used to post form. 
+    var timeZone = 'America/Phoenix';                       //Set the local time zone here. Used when posting Communications Logs
 
-    //Send custom email toggle, if set to true, the script will send a custom email to the user when they create their account regardless of the email options they choose
-    var SysCustomEmail = true;
+    /* Reference List of Moment Timezones: 
+    Pacific Time: America/Los_Angeles
+    Arizona Time: America/Phoenix
+    Central Time: America/Chicago
+    Eastern Time: America/New_York
+    */
 
-    //Must change password, system mandated. When set to true the user will be forced to change their password on first login. Change to false to let user decide whether to change password on first login.
-    var SysChangePass = true;
+    //------------------END CONFIG OPTIONS----------------
 
-    //------------------END OPTIONS----------------
-
-    //Script Variables
-    var outputCollection = [];          //Variable used to return information back to the client.  
-    var groupData = {};                 //Variable to hold group search data
-    var groupIdArray = [];              //Array to hold the ID's of the groups passed in the group list
-    var SiteInfo = '';                  //Site ID holder
-    var newUserObj = {};                //New user object
-    var folderExists;                   //Variable to determine if folder exists
-    var folderId = '';                  //Variable to hold folder ID
-    var returnObj = {};                 //Initialization of the return object
-    var memberType = "User";            //Member type variable
-    var secLvl = '';                    //Variable to hold security level
-    var userSecurityID = '';            //Variable to hold userID for folder security
-    var groupValidation;                //Variable that holds the group validation results.
-    var errorArray = [];                //Array to hold error messages
-    var noGroupsPassed = false;         //Boolean that determines whether groups were passed in by user or not
-    var userPassword = '';              //Generate password variable
-    var newSiteCreated = false;         //Boolean that determines whether postSite() was called
-
-    //Form Field variables
+    //Passed-in Parameters
     //Create variables for the values the user inputs when creating their User
-    var NewUsrID = ffCollection.getFormFieldByName('User Id');
-    var NewSiteName = ffCollection.getFormFieldByName('Site Name');
-    var NewFirstName = ffCollection.getFormFieldByName('First Name');
-    var NewMiddleInitial = ffCollection.getFormFieldByName('Middle Initial');
-    var NewLastName = ffCollection.getFormFieldByName('Last Name');
-    var NewEmail = ffCollection.getFormFieldByName('Email Address');
-    var NewPwd = ffCollection.getFormFieldByName('Password');
+    var userID = ffCollection.getFormFieldByName('User Id');
+    var siteName = ffCollection.getFormFieldByName('Site Name');
+    var firstName = ffCollection.getFormFieldByName('First Name');
+    var middleInitial = ffCollection.getFormFieldByName('Middle Initial');
+    var lastName = ffCollection.getFormFieldByName('Last Name');
+    var emailAddress = ffCollection.getFormFieldByName('Email Address');
+    var password = ffCollection.getFormFieldByName('Password');
     var groupList = ffCollection.getFormFieldByName('Group List');
 
     //Admin options for User Creation
-    var changePassword = ffCollection.getFormFieldByName('Change Password');
     var sendEmail = ffCollection.getFormFieldByName('Send Email');
+    var relateToRecords = ffCollection.getFormFieldByName('Related Records');
     var folderPath = ffCollection.getFormFieldByName('Folder Path');
     var securityLevel = ffCollection.getFormFieldByName('Folder Permissions');
 
     //Email information coming from client side or intermediary node script
-    var SubjectField1 = ffCollection.getFormFieldByName('SubjectField1');
-    var BodyField1 = ffCollection.getFormFieldByName('BodyField1');
-    var SubjectField2 = ffCollection.getFormFieldByName('SubjectField2');
-    var BodyField2 = ffCollection.getFormFieldByName('BodyField2');
+    var subjectField = ffCollection.getFormFieldByName('Email Subject');
+    var bodyField = ffCollection.getFormFieldByName('Email Body');
 
-    //Functions
-    //The following is a function to randomly generate passwords.
-    var RandomPassword = function () {
+    //Script Variables
+    var errors = [];                        //Used to hold errors as they are found, to return together.
+    var createFolder = false;               //Used to measure whether folder attributes were passed in and a folder should be created.
+    var siteID = '';                        //Used to store the site ID that the user wil be assigned to.
+    var siteExists = false;                 //Used to determine if the site exists or if it needs to be created. 
+    var userGUID = '';                      //Used to store the user GUID to be returned to the calling function.
+    var groupsPassed = false;               //Used to determine if groups were passed in to be assigned to the user.
+    var groupIdArray = [];                  //Used to hold the IDs of all groups the user should be added to.
+    var bodyWithoutPassword = '';           //Used to hold the version of the welcome email with the username in it but password redacted.
+    var folderId = '';                      //Used to hold the folder ID, stored to apply security permissions. 
+    var userPassword = '';                  //Used to hold the user's password.
+
+    //Initialization of the return object
+    var returnObj = [];
+
+    /*******************************************************
+    *                   HELPER FUNCTIONS                    *
+    ********************************************************/
+    //Character validation function, used for usernames and passwords
+    var characterValidation = function (phrase, type) {
+        var errorList = '';
+        var charList = '';
+
+        if (type == 'password') {
+            charList = passwordChars;
+        }
+        else if (type == 'username') {
+            charList = userNameChars;
+        }
+        else {
+            return ['Error', 'Invalid type'];
+        }
+
+        for (i = 0; i < phrase.length; i++) {
+            if (charList.indexOf(phrase[i]) < 0) {
+                errorList += phrase[i] + ' is an invalid character for ' + type + 's. ';
+            }
+        }
+
+        if (errorList != '') {
+            return ['Error', errorList];
+        }
+        else {
+            return ['Success'];
+        }
+    }
+
+    var arrayTrimmer = function (array) {
+        arrayHolder = [];
+        for (i = 0; i < array.length; i++) {
+            arrayHolder.push(array[i].trim());
+        }
+        return arrayHolder;
+    }
+
+    var randomPassword = function () {
         var text = "";
 
         for (var i = 0; i < PasswordLength; i++)
-            text += possible.charAt(Math.floor(Math.random() * possible.length));
+            text += passwordChars.charAt(Math.floor(Math.random() * passwordChars.length));
 
         return text;
     };
 
-    //Array to hold all the group names that the user has input.
-    var groupArrayUntrimmed = groupList.value.split(",");
-    //Trim any extra spaces into a new group array
-    var groupArrayTrimmer = function () {
-        arrayHolder = [];
-        for (i = 0; i < groupArrayUntrimmed.length; i++) {
-            arrayHolder.push(groupArrayUntrimmed[i].trim());
-        }
-        return arrayHolder;
-    }
-    //Variable to hold the new trimmed array
-    var groupArray = groupArrayTrimmer();
+    /*******************************************************
+    *                   MAIN FUNCTION                       *
+    ********************************************************/
 
-    //Function to extract all groups in the groups that exist
-    var groupComparison = function (arr1, arr2) {
-        var finalarray = [];
-        arr1.forEach((e1) => arr2.forEach((e2) => {
-            if (e1 === e2) {
-                finalarray.push(e1)
+
+    //Start the promise chain
+    var result = Q.resolve();
+
+    return result.then(function () {
+        //Validate passed in fields
+        //User Id
+        if (!userID || !userID.value) {
+            errors.push("The User Id parameter was not supplied.");
+        }
+        else {
+            userID = userID.value;
+
+            //Validate that the user ID provided includes only accepted characters
+            var userIdValidation = characterValidation(userID, 'username');
+            if (userIdValidation[0] == 'Error') {
+                errors.push(userIdValidation[1]);
             }
         }
-        ));
-        return finalarray;
-    };
 
-    //Function to validate that all the groups in the group list exist
-    var groupValidator = function arraysEqual(arr1, arr2) {
-        if (arr1.length !== arr2.length)
-            return false;
-        for (var i = arr1.length; i--;) {
-            if (arr1[i] !== arr2[i])
-                return false;
+        //Email Address
+        if (!emailAddress || !emailAddress.value) {
+            errors.push("The Email Address parameter was not supplied.");
         }
-        return true;
-    }
+        else {
+            emailAddress = emailAddress.value;
 
-    //Determine whether or not the user passed in groups or not
-    if ((groupArray[0] == '' || groupArray[0] == ' ') || groupArray.length < 1) {
-        noGroupsPassed = true;
-    }
-
-    //Promise for searching user
-    var searchUser = function () {
-        //Set up query for the getUser() API call
-        var currentUserdata = {};
-        currentUserdata.q = "[name] eq '" + NewUsrID.value + "'";
-        currentUserdata.fields = "id,name,userid,siteid,firstname,lastname,emailaddress";
-
-        return vvClient.users.getUser(currentUserdata);
-    }
-
-    //Promise for searching site
-    var searchSite = function () {
-        //Set up query for the getSite() API call
-        var currentUserSitedata = {};
-        currentUserSitedata.q = "name eq '" + NewSiteName.value + "'";
-        currentUserSitedata.fields = "id,name";
-
-        return vvClient.sites.getSites(currentUserSitedata);
-    }
-
-
-    //Combined promise that holds both searchSite() and searchUser() promises
-    var prelimSearch = Promise.all([searchSite(), searchUser()]);
-
-    //User ID character validation function
-    userCharacterValidation = function () {
-        //Set up variable for User ID character validation
-        var newID = NewUsrID.value
-        //Run character validation on the User ID input
-        for (i = 0; i < newID.length; i++) {
-
-            //If statement that handles when an invalid character is input
-            if (possibleChar.indexOf(newID[i]) < 0) {
-                errorArray.push("Error: '" + newID[i] + "' is an invalid character for User ID. Please only use . _ @, letters, or numbers");
+            //Validate that the email address is a valid email
+            var emailReg = new RegExp('\\b[A-Za-z0-9._%+-]+\@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}\\b');
+            if (!emailReg.test(emailAddress)) {
+                errors.push("The Email Address provided is not a valid email format.");
             }
         }
-    }
 
-    //User password validation function
-    passwordValidation = function () {
-        var newPassword = NewPwd.value
-        //Check if pwd is too short
-        if (newPassword.length > 1 && newPassword.length < minPasswordLength) {
-            errorArray.push("Password must be at least " + minPasswordLength + " characters.")
+        //Site Name
+        if (!siteName || !siteName.value) {
+            errors.push("The Site Name parameter was not supplied.");
         }
-        //Check if the password characters are valid
-        if (newPassword.length >= minPasswordLength) {
-            for (i = 0; i < newPassword.length; i++) {
+        else {
+            siteName = siteName.value;
+        }
 
-                //If statement that handles when an invalid character is input
-                if (possible.indexOf(newPassword[i]) < 0) {
-                    errorArray.push("Error: '" + newPassword[i] + "' is an invalid character for passwords.");
-                }
+        //Group List
+        if (!groupList || !groupList.value) {
+            errors.push("The Group List parameter was not supplied.");
+        }
+        else {
+            groupList = groupList.value;
+
+            if (groupList.trim() == '') {
+                groupsPassed = false;
+            }
+            else {
+                groupsPassed = true;
             }
         }
-    }
 
-    folderSecurityValidation = function () {
-        if (forceSecurities == true && (folderPath.value != '' && folderPath.value != ' ')) {
-            secLvl = securityLevel.value.toLowerCase();
+        //Send Email
+        if (!sendEmail || !sendEmail.value) {
+            errors.push("The Send Email parameter was not supplied.");
+        }
+        else {
+            sendEmail = sendEmail.value;
 
-            //The passed in security level must match one of these three options or an error message will be passed
-            switch (secLvl) {
-                case "viewer":
-                    secLvl = "Viewer";
-                    break;
-                case "editor":
-                    secLvl = "Editor";
-                    break;
-                case "owner":
-                    secLvl = "Owner";
-                    break;
-                default:
-                    errorArray.push("Invalid security level '" + securityLevel.value + "' was supplied.");
+            //Validate that Send Email is an appropriate value. 
+            if (sendEmail != 'Standard' && sendEmail != 'Custom' && sendEmail != 'Both') {
+                errors.push("The Send Email parameter must be 'Standard', 'Custom', or 'Both'.");
             }
         }
-    }
 
-    prelimSearch
-        .then(
-            function (promises) {
-                //Run Validations
-                userCharacterValidation();
-                passwordValidation();
-                folderSecurityValidation();
+        //Validate conditionally required inputs
+        //First Name
+        if (!firstName || !firstName.value) {
+            //Not required. Set to empty string to avoid undefined errors.
+            firstName = '';
+        }
+        else {
+            firstName = firstName.value;
+        }
 
-                //Variable that holds the search site results
-                var promiseSite = promises[0];
-                //Variable that holds the search user results
-                var promiseUser = promises[1];
-                //Variable that holds the parsed site data
-                var siteData = JSON.parse(promiseSite);
-                //Variable that holds the parsed user data
-                var userData = JSON.parse(promiseUser);
-                // Set up empty string variable to hold the SiteGUID
-                var testSiteID = "";
+        //Middle Initial
+        if (!middleInitial || !middleInitial.value) {
+            //Not required. Set to empty string to avoid undefined errors.
+            middleInitial = '';
+        }
+        else {
+            middleInitial = middleInitial.value;
+        }
 
-                //Test for any errors in validation
-                if (errorArray.length > 0) {
-                    throw new Error(errorArray);
-                }
+        //Last Name
+        if (!lastName || !lastName.value) {
+            //Not required. Set to empty string to avoid undefined errors.
+            lastName = '';
+        }
+        else {
+            lastName = lastName.value;
+        }
 
-                //Test to see if the user exists or needs to be created
-                if (typeof (userData.data[0]) == 'undefined') {
+        //Password
+        if (!password || !password.value || password.value.trim() == '') {
+            //Not required. Set to empty string to avoid undefined errors. Will generate random password for user.
+            password = '';
+        }
+        else {
+            password = password.value;
+
+            //Validate that the password is a valid length. 
+            if (password.length < minPasswordLength) {
+                errors.push('The password must be at least ' + minPasswordLength + ' long. ');
+            }
+
+            //Validate that the password provided includes only accepted characters
+            var passwordValidation = characterValidation(password, 'password');
+            if (passwordValidation[0] == 'Error') {
+                errors.push(passwordValidation[1]);
+            }
+        }
+
+        //Folder Path
+        if (!folderPath || !folderPath.value || folderPath.value.trim() == '') {
+            //Not required. Set to empty string to avoid undefined errors.
+            folderPath = '';
+            createFolder = false; 
+        }
+        else {
+            folderPath = folderPath.value;
+            createFolder = true;
+        }
+
+        //Folder Permissions
+        if (createFolder) {
+            if (!securityLevel || !securityLevel.value || securityLevel.value.trim() == '') {
+                if (forceSecurities) {
+                    errors.push('The Folder Permissions parameter was not supplied.');
                 }
                 else {
-                    logger.info('Duplicate user found for ID: ' + NewUsrID.value + '.');
-                    throw new Error('Error: A duplicate user found for ID: ' + NewUsrID.value + '.')
+                    //Not required. Set to empty string to avoid undefined errors.
+                    securityLevel = '';
                 }
+            }
+            else {
+                securityLevel = securityLevel.value;
 
-                // Test to see if the site exists or needs to be created
-                if (siteData.meta.status == '200') {
+                if (securityLevel != 'Viewer' && securityLevel != 'Editor' && securityLevel != 'Owner') {
+                    errors.push('The Folder Permissions parameter must be Viewer, Editor, or Owner.');
+                }
+            }
+        }
+        else {
+            //Set to empty string to avoid undefined errors.
+            securityLevel = '';
+        }
 
-                    if (siteData.data.length == 0) {
-                        logger.info('Site Not found for ' + NewSiteName.value);
+        //Email Subject and Email Body
+        if (sendEmail == 'Custom' || sendEmail == 'Both') {
+            //Email Subject
+            if (!subjectField || !subjectField.value) {
+                errors.push("The Email Subject parameter was not supplied.");
+            }
+            else {
+                subjectField = subjectField.value;
+            }
 
-                        //Params object for post site
-                        var siteParams = {};
-                        siteParams.q = '';
-                        siteParams.fields = 'id,name,description,sitetype';
+            //Email Body
+            if (!bodyField || !bodyField.value) {
+                errors.push("The Email Body parameter was not supplied.");
+            }
+            else {
+                bodyField = bodyField.value;
 
-                        //Object to hold new site data
-                        var newSiteData = {};
-                        newSiteData.name = NewSiteName.value;
-                        newSiteData.description = NewSiteName.value;
+                //If only the custom email is being sent, make sure it includes the username and password
+                if (sendEmail == 'Custom') {
+                    if (bodyField.indexOf('[Username]') == -1 || bodyField.indexOf('[Password]') == -1) {
+                        errors.push('The Email Body must include [Username] and [Password].');
+                    }
+                }
+            }
+        }
+        else {
+            //Set values to empty strings to avoid undefined errors.
+            subjectField = '';
+            bodyField = '';
+        }
 
-                        newSiteCreated = true;
+        //Related Records
+        if (!relateToRecords || !relateToRecords.value) {
+            //Not required. Set to empty array to avoid undefined errors.
+            relateToRecords = [];
+        }
+        else {
+            relateToRecords = relateToRecords.value;
 
-                        //If no groups passed in then create the new site. If groups found send error message
-                        return vvClient.sites.postSites(siteParams, newSiteData)
+            if (Array.isArray(relateToRecords) == false) {
+                errors.push('The Related Records parameter must be an array when it is provided.');
+            }
+        }
+
+        //Return all validation errors at once.
+        if (errors.length > 0) {
+            throw new Error(errors);
+        }
+    })
+        .then(function () {
+            //Search for the user ID provided to see if the user already exists
+            var currentUserdata = {};
+            currentUserdata.q = "[name] eq '" + userID + "'";
+            currentUserdata.fields = "id,name,userid,siteid,firstname,lastname,emailaddress";
+
+            return vvClient.users.getUser(currentUserdata).then(function (userResp) {
+                var userData = JSON.parse(userResp);
+                if (userData.meta.status === 200) {
+                    if (userData.data.length > 0) {
+                        throw new Error('An existing user was found with ID ' + userID + '. Unable to create a duplicate.');
                     }
                     else {
-                        if (siteData.data[0].name == NewSiteName.value) {
-                            logger.info('Site found for ' + NewSiteName.value);
-                            testSiteID = siteData.data[0].id;
-
-                            return testSiteID;
-                        }
-                        else {
-                            throw new Error('There was an error when retrieving site data.')
-                        }
+                        logger.info('Searched for existing users with ID ' + userID + '. None found. Continuing the process.');
                     }
                 }
                 else {
-                    throw new Error('Attemp to retrieve site data encountered an error.')
+                    throw new Error('The call to search for an existing user with ID ' + userID + ' returned with an error.');
                 }
+            })
+        })
+        .then(function () {
+            //Search the Site Name passed in to determine if it exists. 
+            var siteSearchObject = {};
+            siteSearchObject.q = "name eq '" + siteName + "'";
+            siteSearchObject.fields = "id,name";
 
-            }
-        )
-        .then(
-            function (createSiteResp) {
-                var createSiteData = createSiteResp;
-                //Determine wheter the site was found or needed to be created and save the ID
-                if (newSiteCreated == false) {
-                    //Store the site ID
-                    SiteInfo = createSiteData;
-                }
-                else {
-                    if (createSiteData.meta.status == 200) {
-                        if (createSiteData.data != undefined) {
-                            //Store the site ID
-                            SiteInfo = createSiteData.data.id;
-                        }
-                        else {
-                            throw new Error('There was an error with retrieving new site data.');
-                        }
+            return vvClient.sites.getSites(siteSearchObject).then(function (siteResp) {
+                var siteData = JSON.parse(siteResp);
+                if (siteData.meta.status === 200) {
+                    if (siteData.data.length === 0) {
+                        //Need to create the site.
+                        siteExists = false;
+                    }
+                    else if (siteData.data.length === 1) {
+                        logger.info('The site exists. Continuing the process.');
+                        //Found exactly one site. Store the ID and move on. 
+                        siteID = siteData.data[0].id;
+
+                        //Do not need to create the site.
+                        siteExists = true; 
                     }
                     else {
-                        throw new Error('There was an error when creating a new site location.');
+                        //Found more than one matching site. This is not a valid state. 
+                        throw new Error('The call to search for the site name ' + siteName + ' returned with more than one result. This is an invalid state. Please contact a system administrator.');
                     }
                 }
+                else {
+                    throw new Error('The call to search for the site name ' + siteName + ' returned with an error.');
+                }
+            })
+        })
+        .then(function () {
+            //If needed, create the site. 
+            if (!siteExists) {
+                var newSiteData = {};
+                newSiteData.name = siteName;
+                newSiteData.description = siteName;
 
-                //Set up group params
+                return vvClient.sites.postSites(null, newSiteData).then(function (postSiteResp) {
+                    if (postSiteResp.meta.status === 200) {
+                        logger.info('Site created successfully.');
+                        siteID = postSiteResp.data.id;
+                    }
+                    else {
+                        throw new Error('The call to create a site with name ' + siteName + ' returned with an error.');
+                    }
+                });
+            }
+        })
+        .then(function () {
+            if (groupsPassed) {
+                //Check if the groups passed in by the user exist.
                 var groupParam = {};
                 groupParam.q = "";
                 groupParam.fields = 'id,name,description';
 
-                getGroupsCalled = true;
-                //Function to get groups from within the given site
-                return vvClient.groups.getGroups(groupParam);
-            }
-        )
-        .then(
-            function (groupResp) {
+                //Function to get all system groups
+                return vvClient.groups.getGroups(groupParam).then(function (groupResp) {
+                    var groupData = JSON.parse(groupResp);
+                    if (groupData.meta.status === 200) {
+                        if (groupData.data.length > 0) {
+                            //Groups were found. Process results.
+                            //Array to hold all the group names that the user has input.
+                            var groupArrayUntrimmed = groupList.split(",");
+                            var groupArray = arrayTrimmer(groupArrayUntrimmed);
 
-                //Variable to hold the parsed group data
-                groupData = JSON.parse(groupResp);
-
-                //Test the getGroups response
-                if (groupData.meta.status == 200) {
-
-                    if (noGroupsPassed == false) {
-                        //Create an array of group names from the results
-                        var groupNameExtract = function () {
-                            var groupNameExtractHolder = []
-                            for (i = 0; i < groupData.data.length; i++) {
-                                groupNameExtractHolder.push(groupData.data[i].name)
-                            }
-                            return groupNameExtractHolder;
-                        }
-                        //Variable to hold the extracted group names array
-                        var groupDataArray = groupNameExtract();
-                        //Variable that calls the group comparison function and holds the results
-                        var groupComparisonResults = groupComparison(groupArray, groupDataArray);
-                        //Variable that calls the group validator function and holds the results. Will be true if all groups passed in the group list exist.
-                        groupValidation = groupValidator(groupArray, groupComparisonResults);
-
-                        if (groupData.data != undefined) {
-                            //Function to extract the ID's of passed groups into an array
-                            for (i = 0; i < groupData.data.length; i++) {
-                                if (groupArray.length == 1) {
-                                    if (groupArray[0] == groupData.data[i].name) {
-                                        groupIdArray.push(groupData.data[i].id)
-                                    }
+                            //Need to ensure that all items in groupArray exist in existingGroups; extract group IDs.
+                            var groupErrors = '';
+                            groupArray.forEach(function (groupName) {
+                                var group = groupData.data.find(x => x.name === groupName);
+                                if (group != undefined) {
+                                    //Found it
+                                    groupIdArray.push(group);
                                 }
                                 else {
-                                    for (j = 0; j < groupArray.length; j++) {
-                                        if (groupArray[j] == groupData.data[i].name) {
-                                            groupIdArray.push(groupData.data[i].id)
-                                        }
-                                    }
+                                    groupErrors += 'The group ' + groupName + ' does not exist. ';
                                 }
-                            }
-                        }
-                        else {
-                            throw new Error('There was an error with the retrieved group data.')
-                        }
-                    }
+                            });
 
-                    //Move on to user creation if Groups were correctly passed in by user
-                    if ((groupIdArray.length == groupArray.length) || noGroupsPassed == true) {
-
-                        //Password length variable
-                        var passLength = NewPwd.value;
-
-                        //Determine whether a random password needs to be used or the user input password
-                        if (passLength.length <= 1) {
-                            userPassword = RandomPassword();
-                        }
-                        else if (passLength.length >= minPasswordLength) {
-                            userPassword = NewPwd.value;
-                        }
-                        else {
-                            logger.info("Password must be at least " + minPasswordLength + " characters.");
-                            throw new Error('User could not be created. Password too short');
-                        }
-
-                        //Values for the new user object
-                        newUserObj.userid = NewUsrID.value;
-                        newUserObj.firstname = NewFirstName.value;
-                        newUserObj.middleinitial = NewMiddleInitial.value;
-                        newUserObj.lastname = NewLastName.value;
-                        newUserObj.emailaddress = NewEmail.value;
-                        newUserObj.password = userPassword;
-
-                        //Logic to decide whether user must change password on first login. Based of user input.
-                        if (SysChangePass == true) {
-                            newUserObj.mustChangePassword = 'true';
-                        }
-                        else {
-                            if (changePassword.value == "false") {
-                                newUserObj.mustChangePassword = 'false';
+                            //If any groups do not exist, stop the process. Otherwise continue. 
+                            if (groupErrors != '') {
+                                throw new Error('At least one group was not found to exist. ' + groupErrors);
                             }
                             else {
-                                newUserObj.mustChangePassword = 'true';
+                                logger.info('All groups were found to exist. Continuing the process.');
                             }
-                        }
-
-                        //Logic to decide whether system will send an email to user when account created.
-                        if (SysCustomEmail == true) {
-                            newUserObj.sendEmail = 'false';
                         }
                         else {
-                            if (sendEmail.value == 'false') {
-                                newUserObj.sendEmail = 'false';
-                            }
-                            else {
-                                newUserObj.sendEmail = 'true';
-                            }
+                            throw new Error('No user permission groups were found to exist in the system. Please contact a system administrator.');
                         }
-
-                        //Empty param object for postUsers()
-                        var userparm = {};
-
-                        return vvClient.users.postUsers(userparm, newUserObj, SiteInfo)
-                    }
-                    else if (groupValidation == false) {
-                        logger.info("One ore more of the groups provided was not found.");
-                        throw new Error('One ore more of the groups provided was not found.');
                     }
                     else {
-                        logger.info("Didn't find a unique group for the provider site");
-                        throw new Error('No unique group found for provided site.');
+                        throw new Error('The call to get existing group names returned with an error.');
                     }
+                });
+            }
+        })
+        .then(function () {
+            //Starting user creation logic. If a random password needs to be generated, do it now.
+            if (password == '') {
+                //Generate a random password
+                userPassword = randomPassword();
+            }
+            else {
+                //Use the password that was passed in.
+                userPassword = password;
+            }
+
+            var newUserObject = {};
+            newUserObject.userid = userID;
+            newUserObject.firstName = firstName;
+            newUserObject.middleInitial = middleInitial;
+            newUserObject.lastName = lastName; 
+            newUserObject.emailaddress = emailAddress;
+            newUserObject.password = userPassword;
+            newUserObject.mustChangePassword = SysChangePass;
+
+            if (sendEmail != 'Custom') {
+                newUserObject.sendEmail = 'true';
+            }
+            else {
+                newUserObject.sendEmail = 'false';
+            }
+            
+            var userParams = {};
+
+            return vvClient.users.postUsers(userParams, newUserObject, siteID).then(function (userResp) {
+                if (userResp.meta.status === 200) {
+                    //User created. Store the user GUID for passing back to the calling function. 
+                    //At this point, future processes should return Success or Minor Errors. Not throwing any more errors because the user has been created.
+                    userGUID = userResp.data.id; 
                 }
                 else {
-                    throw new Error('There was an error when trying to search for groups.')
+                    throw new Error('The call to create the user returned with an error.');
                 }
-            })
-        .then(function (createUserResp) {
-
-            //Variable to hold the post user response object
-            var createUserData = createUserResp;
-
-            if (createUserData.meta.status == '200' && noGroupsPassed == false) {
-                logger.info("User " + NewUsrID.value + " was created.");
-
-                if (createUserData.data != undefined) {
-                    //Add the user ID for folder security
-                    userSecurityID = createUserData.data.id;
-                }
-                else {
-                    throw new Error('There was an error when creating a new user.')
-                }
-
-                //Params for add user to group
-                var groupParams = {};
-
+            });
+        })
+        .then(function () {
+            //If groups were passed in, add the user to groups
+            if (groupsPassed) {
                 var addGroupProcess = Q.resolve();
 
                 groupIdArray.forEach(function (groupItem) {
                     addGroupProcess = addGroupProcess.then(function () {
-                        return vvClient.groups.addUserToGroup(groupParams, groupItem, createUserData.data.id)
-                            .then(
-                                function (addResp) {
-                                    var addData = JSON.parse(addResp);
-                                    if (addData.meta.status != 201) {
-                                        errorArray.push('Error adding user to group.');
-                                    }
-                                }
-                            )
-                    })
-                })
+                        return vvClient.groups.addUserToGroup({}, groupItem.id, userGUID).then(function (addResp) {
+                            var addData = JSON.parse(addResp);
+                            if (addData.meta.status !== 201) {
+                                //Continuing the process if an error occurs; will measure this at the end of the process.
+                                logger.info('Error adding user to group ' + groupItem.name + '.');
+                                errors.push('Error adding user to group ' + groupItem.name + '.');
+                            }
+                        });
+                    });
+                });
+
                 return addGroupProcess;
-            }
-            else if (noGroupsPassed == true) {
-                return false;
-            }
-            else {
-                logger.info("User creation for user " + NewUsrID.value + " had a problem.");
-                throw new Error('User could not be created.')
             }
         })
         .then(function () {
+            //If an email needs to be sent to the created user, send it now
+            if (sendEmail == 'Custom' || sendEmail == 'Both') {
+                var emailData = {};
+                emailData.recipients = emailAddress;
+                emailData.subject = subjectField;
 
-            if (errorArray.length == 0) {
-                //Sends custom email if set to true
-                if (SysCustomEmail == true) {
+                //Replace Username and Password tokens.
+                bodyWithoutPassword = bodyField.replace('[Username]', userID);
+                emailData.body = bodyWithoutPassword.replace('[Password]', userPassword);
 
-                    var ToField = NewEmail.value;
-                    var emailData = {};
-                    emailData.recipients = ToField;
-                    emailData.subject = SubjectField1.value;
-                    emailData.body = BodyField1.value;
-                    var emailParams = '';
+                var emailParams = '';
 
-                    return vvClient.email.postEmails(emailParams, emailData);
-                }
-                else {
-                    return false;
-                }
-            }
-            else {
-                throw new Error('There was an error adding user to groups.')
-            }
-        })
-        .then(function (resEmail) {
-
-            //Sends custom email if set to true
-            if (SysCustomEmail == true) {
-                if (resEmail.meta.status == '201' && resEmail.data.success == true) {
-
-                    var ToField = NewEmail.value;
-                    var emailData = {};
-                    emailData.recipients = ToField;
-                    emailData.subject = SubjectField2.value;
-                    emailData.body = BodyField2.value + ': ' + userPassword;
-                    var emailParams = '';
-
-                    return vvClient.email.postEmails(emailParams, emailData);
-                }
-                else {
-                    logger.info('Email not sent')
-                }
-            }
-            else {
-                return false;
+                return vvClient.email.postEmails(emailParams, emailData).then(function (emailResp) {
+                    if (emailResp.meta.status === 201 && emailResp.data.success == true) {
+                        logger.info("Welcome email sent successfully.");
+                    }
+                    else {
+                        logger.info('User has been created, but the welcome email was not sent successfully.');
+                        errors.push('User has been created, but the welcome email was not sent successfully.');
+                    }
+                });
             }
         })
-        .then(
-            function (respEmail) {
-                var emailResultData = respEmail;
-                //Determine whether the email was sent or if there was an error with sending the email
-                if (respEmail != false && (emailResultData.meta.status == '201' && emailResultData.data.success == true)) {
-                    logger.info("Email sent")
-                }
-                else {
-                    throw new Error("Email not sent");
-                }
+        .then(function () {
+            //If a communications log needs to be created to reflect the welcome email, send it now.
+            if (createCommLog && sendEmail != 'Standard') {
 
-                //If a folder path was input then we move on to call getFolders()
-                if (!folderPath.value || folderPath.value == ' ') {
-                    return false;
-                }
-                else {
-                    //Determine if a folder exists in the destination location, to prevent duplication
-                    newFolderPath = folderPath.value;
+                var sendDate = momentTz().tz(timeZone).format('L');
+                var sendTime = momentTz().tz(timeZone).format('LT');
+                var localTime = sendDate + " " + sendTime;
 
-                    logger.info("Finding folder: " + newFolderPath);
+                var targetFields = {};
+                targetFields['Communication Type'] = 'Email';
+                targetFields['Email Type'] = 'Immediate Send';
+                targetFields['Email Recipients'] = emailAddress;
+                targetFields['Subject'] = subjectField;
+                targetFields['Email Body'] = bodyWithoutPassword;
+                targetFields['Scheduled Date'] = localTime;
+                targetFields['Communication Date'] = localTime;
+                targetFields['Approved'] = 'Yes';
+                targetFields['Communication Sent'] = 'Yes';
 
-                    var FolderParams = {};
-                    FolderParams.folderPath = newFolderPath;
-                    return vvClient.library.getFolders(FolderParams)
-                }
+                return vvClient.forms.postForms(null, targetFields, commLogTemplateID).then(function (postResp) {
+                    if (postResp.meta.status === 201 || postResp.meta.status === 200) {
+                        var commLogRevisionId = postResp.data.revisionId;
+
+                        if (relateToRecords.length > 0) {
+                            //Relate the created communication log to each Form ID in the relateToRecords array.
+                            var relateProcessResult = Q.resolve();
+
+                            relateToRecords.forEach(function (relatedForm) {
+                                relateProcessResult = relateProcessResult.then(function () {
+                                    return vvClient.forms.relateFormByDocId(commLogRevisionId, relatedForm).then(function (relateResp) {
+                                        var relatedResp = JSON.parse(relateResp);
+                                        if (relatedResp.meta.status === 200 || relatedResp.meta.status === 404) {
+                                            logger.info("Communications Log related to form " + relatedForm + " successfully.");
+                                        }
+                                        else {
+                                            logger.info("Call to relate the Communications Log to form " + relatedForm + " returned with an error.");
+                                            errors.push("Call to relate the Communications Log to form " + relatedForm + " returned with an error.");
+                                        }
+                                    });
+                                });
+                            });
+
+                            return relateProcessResult;
+                        }
+                    }
+                    else {
+                        errors.push("Call to post Communications Log form returned with an error. The server returned a status of " + postResp.meta.status);
+                    }
+                })
             }
-        )
-        .then(
-            function (folderPromises) {
-                //If getFolders was not called the code continues
-                if (folderPromises == false) {
-                    return false;
-                }
-                //If getFolders was called we determine whether the call was successful and set variables and determine whether we need to create folders
-                else {
+        })
+        .then(function () {
+            //If user has entered a folder path, then the system will search for the folder and create a new folder if it does not already exist.
+            if (createFolder) {
+                //Determine if a folder exists in the destination location, to prevent duplication
+                logger.info("Finding folder: " + folderPath);
 
-                    var promiseFolder = JSON.parse(folderPromises);
-                    if (promiseFolder.meta.status === 200) {
-                        if (promiseFolder.data) {
-                            folderExists = true;
-                            folderId = promiseFolder.data.id;
+                var FolderParams = {};
+                FolderParams.folderPath = folderPath;
+
+                return vvClient.library.getFolders(FolderParams).then(function (folderResp) {
+                    var folderData = JSON.parse(folderResp);
+                    if (folderData.meta.status === 200) {
+                        if (folderData.data.length > 0) {
+                            //Folder found. Log the ID but do not create the folder.
+                            folderId = folderData.data[0].id; 
                         }
                         else {
-                            throw new Error("User created but call to get folder returned with a successful status code, but no data.")
+                            logger.info("The call to find a folder at " + folderPath + " returned with no duplicates. Continuing the process.");
                         }
                     }
-                    else if (promiseFolder.meta.status === 403) {
-                        //console.log("User created but call to get folder returned with a 403. Assuming the folder does not exist.");
+                    else if (folderData.meta.status === 403) {
+                        logger.info("The call to find a folder at " + folderPath + " returned with a 403. Assuming no duplicates and continuing the process.");
                     }
                     else {
-                        throw new Error("User created but call to get folder returned with an unsuccessful status code.")
+                        logger.info("The call to find a folder at " + folderPath + " returned with an error.");
+                        errors.push("The call to find a folder at " + folderPath + " returned with an error.");
                     }
-                }
+                });
             }
-        )
-        .then(
-            function (folderResponse) {
-                //Script skips if there is no need for folder logic
-                if (folderResponse == false) {
-                    //console.log("No folder input 3.")
-                    return false;
-                }
-                else {
-                    //When the folder that was input does not exist we create the folder
-                    if (!folderExists) {
-                        folderdata = {};
-                        return vvClient.library.postFolderByPath(null, folderdata, newFolderPath)
-                            .then(
-                                function (createFolderResp) {
-                                    if (createFolderResp.meta.status === 200) {
-                                        folderId = createFolderResp.data.id;
-                                    }
-                                    else {
-                                        returnObj.status = "Error creating folder";
-                                        throw new Error("User was created but call to create folder returned with an error.")
-                                    }
-                                }
-                            )
+        })
+        .then(function () {
+            //If the folder was not found in the previous step, create the folder
+            if (createFolder && folderId == '') {
+                var folderData = {};
+                return vvClient.library.postFolderByPath(null, folderData, folderPath).then(function (createFolderResp) {
+                    if (createFolderResp.meta.status === 200) {
+                        logger.info("Folder created successfully.");
+                        folderId = createFolderResp.data.id;
                     }
                     else {
-                        return;
+                        errors.push("User was created but call to create folder at " + folderPath + " returned with an error.");
                     }
-                }
+                });
             }
-        )
-        .then(
-            function (folderRes) {
-                //Script skips over once again if not folder was input
-                if (folderRes == false) {
-                    return false;
-                }
-                else {
-                    //Determine whether a security permission was passed
-                    if (!securityLevel.value || securityLevel.value == ' ') {
-                        outputCollection[0] = 'Success';
-                        outputCollection[1] = 'User created and added to group.';
-                        outputCollection[2] = userSecurityID;
-                        outputCollection[3] = SiteInfo;
-                        outputCollection[4] = folderId;
-                        response.json(200, outputCollection);
-                    }
-                    //If a security was passed we assign the user with that secuirty
-                    else {
+        })
+        .then(function () {
+            //The system will then take the security permissions that the user has entered and will add that security permission for the user on that folder.
+            if (securityLevel != '' && folderId != '') {
+                var memType = 'User';
+                memType = vvClient.constants.securityMemberType[memType];
+                var role = vvClient.constants.securityRoles[securityLevel]
+                var cascadeChanges = true;
 
-                        if (forceSecurities == false) {
-                            secLvl = securityLevel.value.toLowerCase();
-
-                            //The passed in security level must match one of these three options or an error message will be passed
-                            switch (secLvl) {
-                                case "viewer":
-                                    secLvl = "Viewer";
-                                    break;
-                                case "editor":
-                                    secLvl = "Editor";
-                                    break;
-                                case "owner":
-                                    secLvl = "Owner";
-                                    break;
-                                default:
-                                    //This should never be hit since the values are validated in the beginning of the function, but here just in case
-                                    throw new Error("An invalid security level '" + securityLevel.value + "' was supplied.");
-                            }
-                        }
-
-                        var memType = memberType;
-                        memType = vvClient.constants.securityMemberType[memType];
-                        var role = vvClient.constants.securityRoles[secLvl]
-                        var cascadeChanges = true;
-
-                        return vvClient.library.putFolderSecurityMember(folderId, userSecurityID, memType, role, cascadeChanges)
-                    }
-                }
-            }
-        )
-        .then(
-            function (folderSecurityRes) {
-                //Successful user creation response if user was created without any folders passed
-                if (folderSecurityRes == false) {
-                    outputCollection[0] = 'Success';
-                    outputCollection[1] = 'User created and added to group.';
-                    outputCollection[2] = userSecurityID;
-                    outputCollection[3] = SiteInfo;
-                    outputCollection[4] = "No folder input";
-                    response.json(200, outputCollection);
-                }
-                else {
-                    if (folderSecurityRes.meta == undefined) {
-                        throw new Error("User was created successfully but there was an error with adding folder securities: " + folderSecurityRes.message)
+                return vvClient.library.putFolderSecurityMember(folderId, userGUID, memType, role, cascadeChanges).then(function (folderSecurityResp) {
+                    if (folderSecurityResp.meta.status === 200) {
+                        logger.info('Security permissions successfully added to folder');
                     }
                     else {
-                        //Successful user creation response is folders were passed.
-                        if (folderSecurityRes.meta.status === 200) {
-                            addedAssignments = true;
-                            outputCollection[0] = 'Success';
-                            outputCollection[1] = 'User created added to group and folder.';
-                            outputCollection[2] = userSecurityID;
-                            outputCollection[3] = SiteInfo;
-                            outputCollection[4] = folderId;
-                            response.json(200, outputCollection);
-                            return true;
-                        } else {
-                            //console.log("Call to add folder security member returned with an unsuccessful status code.");
-                            hasAssignmentError = true;
-                        }
+                        errors.push('The folder was created, but an error was returned when attempting to add user security permissions to the folder.');
                     }
-                }
+                });
             }
-        )
-        .catch(function (exception) {
-            //Error catching, will send the user the error message
-            logger.info(exception);
-            outputCollection[0] = 'Error';
-            outputCollection.push('The following error was encountered when creating a user ' + exception);
-            response.json(200, outputCollection);
-            return false;
+        })
+        .then(function () {
+            //Handle any minor errors.
+            if (errors.length > 0) {
+                returnObj[0] = 'Minor Error';
+                returnObj[1] = '';
+                errors.forEach(function (errorLog) {
+                    returnObj[1] += errorLog + '<br>';
+                });
+            }
+            else {
+                returnObj[0] = 'Success';
+                returnObj[1] = 'All actions completed successfully.';
+            }
+
+            //Always pass back the user GUID and Site ID, since user was created.
+            returnObj[2] = userGUID;
+            returnObj[3] = siteID;
+
+            return response.json(returnObj);
+        })
+        .catch(function (err) {
+            logger.info(JSON.stringify(err));
+
+            returnObj[0] = 'Error';
+
+            if (err && err.message) {
+                returnObj[1] = err.message;
+            } else {
+                returnObj[1] = "An unhandled error has occurred. The message returned was: " + err;
+            }
+
+            return response.json(returnObj);
         })
 }
