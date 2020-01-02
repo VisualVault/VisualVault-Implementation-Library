@@ -31,6 +31,12 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     Group List - (string, not Required) String of group names separated by commas. The user will be assigned to these groups.
                     Remove Group List - (string, not Required) String of group names separated by commas. The user will be removed from these groups.
 
+    Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
+                Any item in the array at points 2 or above can be used to return multiple items of information.
+                0 - Status: Success, Error
+		  1 - Message
+                2 - User GUID
+                
      Psuedo code:
         1. Validate parameter inputs to ensure the combination is valid. 
         2. Assess which action the script should take.
