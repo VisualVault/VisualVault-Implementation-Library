@@ -23,7 +23,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 User Id - (String, Required)
                 Email Address - (String, Required)
                 Site Name - (String, Required)
-                Group List - (String, Required) String of groups separated by commas
+                Group List - (String, Required) String of groups separated by commas. May be an empty string if no groups are desired.
                 First Name - (String, Optional)
                 Middle Initial - (String, Optional)
                 Last Name - (String, Optional)
