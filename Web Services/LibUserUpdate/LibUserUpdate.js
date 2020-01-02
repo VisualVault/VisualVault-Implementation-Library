@@ -19,7 +19,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     NOTE: The username of a user cannot be changed with this script. It must be updated manually in the Control Panel.
                           Passwords cannot be changed with this script. Code is commented out in previous versions of this script on GitHub; to be used when the API is updated. 
                           User sites cannot be changed with this script. 
-
      Parameters: The following represent variables passed into the function:
                     Action - (string, Required) 'Update', 'Disable', or 'Enable' This parameter will control which actions this script takes.
                     User GUID - (string, conditionally Required) This is the UsID (GUID) of the user. It is required when Action = 'Enable'
@@ -30,14 +29,13 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     Email Address - (string, not Required) When provided, this information will be updated in the user profile. Not updated when Action = 'Disable'
                     Group List - (string, not Required) String of group names separated by commas. The user will be assigned to these groups.
                     Remove Group List - (string, not Required) String of group names separated by commas. The user will be removed from these groups.
-
-    Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
+         Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
                 Any item in the array at points 2 or above can be used to return multiple items of information.
                 0 - Status: Success, Error
-		  1 - Message
+		        1 - Message
                 2 - User GUID
-                
-     Psuedo code:
+                3 - Site ID 
+        Psuedo code:
         1. Validate parameter inputs to ensure the combination is valid. 
         2. Assess which action the script should take.
                 a. If Disable, only disable the account.
@@ -53,15 +51,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
         10. If Group List or Remove Group List were passed in as parameters, call getGroups to ensure they exist.
         11. Add the groups in Group List.
         12. Remove the groups in Remove Group List.
-
      Date of Dev:   12/4/2018
-     Last Rev Date: 12/10/2019
-
+     Last Rev Date: 01/02/2020
      Revision Notes:
      12/20/2018 - Alex Rhee: Initial creation of the business process.
      1/3/19 - Alex Rhee: Process created and working. Passwords cannot be changed at this time.
      1/18/19 - Alex Rhee: Made sure all API calls are being measured by Resp.meta.status === 200
-     12/10/2019 - Kendra Austin: Update to include user enable & disable; update header; bug fixes. 
+     12/10/2019 - Kendra Austin: Update to include user enable & disable; update header; bug fixes.
+     01/02/2020 - Kendra Austin: Return site ID in [3] and added error checking.
      */
 
     logger.info('Start of the process LibUserUpdate at ' + Date());
@@ -188,28 +185,35 @@ module.exports.main = function (ffCollection, vvClient, response) {
                         returnObj[0] = 'Success';
                         returnObj[1] = 'User account disabled.';
                         returnObj[2] = userGUID;
+                        returnObj[3] = siteID;
                         return response.json(returnObj);
                     }
                     else {
                         throw new Error('Attempt to disable the user account encountered an error.')        //TODO: Add status message?
                     }
                 });
-            } 
+            }
         })
         .then(function () {
             //Determine what information the user wants to change and load that info into an update object
             var userUpdateObj = {};
 
-            if (NewFirstName.value && NewFirstName.value != '' && NewFirstName.value != currentFirstName) {
-                userUpdateObj.firstname = NewFirstName.value;
+            if (NewFirstName) {
+                if (NewFirstName.value && NewFirstName.value != '' && NewFirstName.value != currentFirstName) {
+                    userUpdateObj.firstname = NewFirstName.value;
+                }
+            }  
+
+            if (NewLastName) {
+                if (NewLastName.value && NewLastName.value != '' && NewLastName.value != currentLastName) {
+                    userUpdateObj.lastname = NewLastName.value;
+                }
             }
 
-            if (NewLastName.value && NewLastName.value != '' && NewLastName.value != currentLastName) {
-                userUpdateObj.lastname = NewLastName.value;
-            }
-
-            if (NewMiddleInitial.value && NewMiddleInitial.value != '' && NewMiddleInitial.value != currentMiddleInitial) {
-                userUpdateObj.middleinitial = NewMiddleInitial.value;
+            if (NewMiddleInitial) {
+                if (NewMiddleInitial.value && NewMiddleInitial.value != '' && NewMiddleInitial.value != currentMiddleInitial) {
+                    userUpdateObj.middleinitial = NewMiddleInitial.value;
+                }
             }
 
             //Check if anything needs to be updated
@@ -229,8 +233,10 @@ module.exports.main = function (ffCollection, vvClient, response) {
             //Determine if the email address needs to be changed. If so, load that info into a new email object.
             var emailUpdateObj = {};    //New user data object for updating emails specifically
 
-            if (NewEmail.value && NewEmail.value != '' && NewEmail.value != currentEmailAddress) {
-                emailUpdateObj.emailaddress = NewEmail.value;
+            if (NewEmail) {
+                if (NewEmail.value && NewEmail.value != '' && NewEmail.value != currentEmailAddress) {
+                    emailUpdateObj.emailaddress = NewEmail.value;
+                }
             }
 
             //Check if the email address needs to be updated
@@ -248,14 +254,18 @@ module.exports.main = function (ffCollection, vvClient, response) {
         })
         .then(function () {
             //If Group List or Remove Group List were passed in as parameters, call getGroups to ensure they exist.
-            if (groupList.value && groupList.value != '' && groupList.value != ' ') {
-                groupList = groupList.value.split(",");
-                groupOption = true;
+            if (groupList) {
+                if (groupList.value && groupList.value != '' && groupList.value != ' ') {
+                    groupList = groupList.value.split(",");
+                    groupOption = true;
+                }
             }
 
-            if (removeGroupList.value && removeGroupList.value != '' && removeGroupList.value != ' ') {
-                removeGroupList = removeGroupList.value.split(",");
-                removeGroupOption = true; 
+            if (removeGroupList) {
+                if (removeGroupList.value && removeGroupList.value != '' && removeGroupList.value != ' ') {
+                    removeGroupList = removeGroupList.value.split(",");
+                    removeGroupOption = true;
+                }
             }
 
             //Only get groups if something is going to be added or removed
@@ -295,7 +305,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     addGroupProcess = addGroupProcess.then(function () {
                         //Set groupData to blank and groupFound to false. 
                         var groupData = {};
-                        var groupFound = false; 
+                        var groupFound = false;
 
                         //Go through each current group and see if one of them is the group being added
                         currentGroups.forEach(function (currentGroup) {
@@ -326,7 +336,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     })
                 });
 
-                return addGroupProcess; 
+                return addGroupProcess;
             }
         })
         .then(function () {
@@ -370,7 +380,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     })
                 });
 
-                return removeGroupProcess; 
+                return removeGroupProcess;
             }
         })
         .then(function () {
@@ -382,6 +392,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
             returnObj[0] = 'Success';
             returnObj[1] = 'User updated.';
             returnObj[2] = userGUID;
+            returnObj[3] = siteID;
             return response.json(returnObj);
         })
         .catch(function (err) {
