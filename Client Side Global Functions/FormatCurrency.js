@@ -4,7 +4,7 @@
 //Pass in a string that represents the Currency
 
 //Convert string to integer
-var s2 = parseFloat(Currency);
+var s2 = parseFloat(Currency.replace(/,/g, ''));
 
 if (s2.toFixed(2) == 'NaN') {
     return Currency;
