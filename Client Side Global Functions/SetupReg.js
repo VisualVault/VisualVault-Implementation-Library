@@ -36,7 +36,7 @@ VV.Form.Global.SSN = new RegExp('([0-9]{3})[-]([0-9]{2})[-]([0-9]{4})$');
 VV.Form.Global.EIN = new RegExp('^([0-9]{2})[-]\\d{7}$');
 VV.Form.Global.NPI = new RegExp('^\\d{10}$');
 // Currency format must be '0.00' or '-0.00'
-VV.Form.Global.Currency = new RegExp('^[+-]?([0-9]{1,3}([0-9]{3},)*[0-9]{3}|[0-9]+)(\.[0-9][0-9])?$');
+VV.Form.Global.Currency = new RegExp('^[0-9]*\.[0-9]{2}$');
 // Percent check. Value can be 0 - 100 including decimals.
 VV.Form.Global.Percent = new RegExp('^(100([\.][0]{1,})?$|[0-9]{1,2}([\.][0-9]{1,})?)$');
 VV.Form.Global.NumberOnly = new RegExp('^([0-9]{1,3}([0-9]{3},)*[0-9]{3}|[0-9]+)?$');
