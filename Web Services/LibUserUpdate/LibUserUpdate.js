@@ -18,10 +18,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Purpose:       The purpose of this NodeJS process will allow a user to be updated with various potential options.  Those options will be turned on or off depending on what is passed to the NodeJS process.
                     NOTE: The username of a user cannot be changed with this script. It must be updated manually in the Control Panel.
                           Passwords cannot be changed with this script. Code is commented out in previous versions of this script on GitHub; to be used when the API is updated. 
-                          User sites cannot be changed with this script. 
+                          User sites cannot be changed with this script.
+
+                    IMPORTANT CONFIGURATION NOTE: A query must be configured in Default queries (NOT in form data queries) that reflects the below:
+                        SELECT UsUserID, UsId, UsFirstName, UsMiddleInit, UsLastName, UsEmailAddress, UsSiteID, UsEnabled
+                        FROM dbo.Users
+
      Parameters: The following represent variables passed into the function:
                     Action - (string, Required) 'Update', 'Disable', or 'Enable' This parameter will control which actions this script takes.
-                    User GUID - (string, conditionally Required) This is the UsID (GUID) of the user. It is required when Action = 'Enable'
                     User ID - (string, Required) This is the user name of the user.
                     First Name - (string, not Required) When provided, this information will be updated in the user profile. Not updated when Action = 'Disable'
                     Middle Initial - (string, not Required) When provided, this information will be updated in the user profile. Not updated when Action = 'Disable'
@@ -29,20 +33,22 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     Email Address - (string, not Required) When provided, this information will be updated in the user profile. Not updated when Action = 'Disable'
                     Group List - (string, not Required) String of group names separated by commas. The user will be assigned to these groups.
                     Remove Group List - (string, not Required) String of group names separated by commas. The user will be removed from these groups.
-         Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
+         
+     Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
                 Any item in the array at points 2 or above can be used to return multiple items of information.
                 0 - Status: Success, Error
 		        1 - Message
                 2 - User GUID
-                3 - Site ID 
-        Psuedo code:
+
+     Psuedo code:
         1. Validate parameter inputs to ensure the combination is valid. 
         2. Assess which action the script should take.
                 a. If Disable, only disable the account.
                 b. If Enable, enable then update account.
                 c. If Update, only update the account.
-        3. Enable the user account if needed. This allows us to get the site ID later and update the user if needed.
-        4. Call getUser and see if the user ID exists and send back the user GUID if it exists.
+        3. Get the results of a custom query to find the user information. Store info for later use. 
+        - If no user found, throw an error.
+        4. Enable the user account if needed. 
         5. Disable the user account if needed. Immediately return a reponse; no further actions taken.
         6. Determine what information the user wants to change and load that info into a user update object.
         7. Send the user update object through putUsers to update the user information.
@@ -52,25 +58,25 @@ module.exports.main = function (ffCollection, vvClient, response) {
         11. Add the groups in Group List.
         12. Remove the groups in Remove Group List.
      Date of Dev:   12/4/2018
-     Last Rev Date: 01/02/2020
+     Last Rev Date: 01/08/2020
+
      Revision Notes:
      12/20/2018 - Alex Rhee: Initial creation of the business process.
      1/3/19 - Alex Rhee: Process created and working. Passwords cannot be changed at this time.
      1/18/19 - Alex Rhee: Made sure all API calls are being measured by Resp.meta.status === 200
      12/10/2019 - Kendra Austin: Update to include user enable & disable; update header; bug fixes.
-     01/02/2020 - Kendra Austin: Return site ID in [3] and added error checking.
+     01/08/2020 - Kendra Austin: Update to run a custom query to find the user rather than getUsers. This precludes the need for the user GUID parameter.
      */
 
     logger.info('Start of the process LibUserUpdate at ' + Date());
 
     //---------------CONFIG OPTIONS---------------
-
+    var userQueryName = 'User Lookup';         //The name of the custom query in Default queries (NOT in form data queries)
 
     //------------------END OPTIONS----------------
 
     //Parameter Variables
     var action = ffCollection.getFormFieldByName('Action');
-    var userGUID = ffCollection.getFormFieldByName('User GUID');
     var userID = ffCollection.getFormFieldByName('User ID');
     var NewFirstName = ffCollection.getFormFieldByName('First Name');
     var NewLastName = ffCollection.getFormFieldByName('Last Name');
@@ -82,6 +88,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
     //Script Variables
     var returnObj = [];                                                 //Variable used to return information back to the client
     var errorArray = [];                                                //Array to hold error messages
+    var userGUID = '';                                                  //Variable to hold the user GUID when it is found.
     var siteID = '';                                                    //Variable to hold site GUID
     var currentFirstName = '';                                          //Variable to hold the current user profile info; to compare with new info and determine if update needed
     var currentLastName = '';                                           //Variable to hold the current user profile info; to compare with new info and determine if update needed
@@ -114,22 +121,49 @@ module.exports.main = function (ffCollection, vvClient, response) {
             userID = userID.value;
         }
 
-        if (action == 'Enable') {
-            if (!userGUID || !userGUID.value) {     //User GUID is required when Action = Enable
-                errorArray.push("The User GUID parameter must be supplied to enable a user.")
-            }
-            else {
-                userGUID = userGUID.value;
-            }
-        }
-
         //Return all validation errors at once.
         if (errorArray.length > 0) {
             throw new Error(errorArray);
         }
     })
         .then(function () {
-            //If enable is needed, do that first. This allows us to get the site ID later and update the user if needed. 
+            //First, run the custom query to get the userGUID and other user information. This will be needed later. See comment header for fields.
+
+            //Query on the user ID
+            var userQueryParams = { filter: "[UsUserID] = '" + userID + "'" }
+
+            return vvClient.customQuery.getCustomQueryResultsByName(userQueryName, userQueryParams).then(function (userRes) {
+                var userData = JSON.parse(userRes);
+                if (userData.meta.status == 200) {
+                    if (userData.data.length == 1) {
+                        //Exactly one user found. Save all user info for later use. 
+                        var userInfo = userData.data[0];
+                        userGUID = userInfo.usId;
+                        siteID = userInfo.usSiteID;
+                        currentFirstName = userInfo.usFirstName;
+                        currentLastName = userInfo.usLastName;
+                        currentMiddleInitial = userInfo.usMiddleInit;
+                        currentEmailAddress = userInfo.usEmailAddress;
+                    }
+                    else if (userData.data.length == 0) {
+                        //No user found. Throw error.
+                        throw new Error('User not found with user ID: ' + userID + '.')
+                    }
+                    else {
+                        //Many users found. Invalid state. 
+                        throw new Error('More than one user was found for ID: ' + userID + '. This is an invalid state. Please notify a system administrator.');
+                    }
+                }
+                else if (userData.meta.status == 404) {
+                    throw new Error('The custom query to find users was not found. Please ensure that a query named ' + userQueryName + ' has been configured in the default queries area.');
+                }
+                else {
+                    throw new Error('There was an error when searching for the user ' + userID + '.');
+                }
+            })
+        })
+        .then(function () {
+            //If enable is needed, do that first. This allows us to update the user if needed. 
             if (action == 'Enable') {
                 var userEnableObj = {};
                 userEnableObj.enabled = 'true';
@@ -146,34 +180,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
             }
         })
         .then(function () {
-            //Call getUser and see if the user ID exists. Get user GUID and site GUID if existing.
-            var currentUserdata = {};                       //Set up query for the getUser() API call
-            currentUserdata.q = "[name] eq '" + userID + "'";
-            currentUserdata.fields = "id,name,userid,siteid,firstname,lastname,middleinitial,emailaddress";
-
-            return vvClient.users.getUser(currentUserdata).then(function (userPromise) {
-                var userData = JSON.parse(userPromise);
-                if (userData.meta.status == 200) {
-                    //Test to see if the user exists or needs to be created
-                    if (typeof (userData.data[0]) == 'undefined') {
-                        throw new Error('Error: User not found for ID: ' + userID + '.')
-                    }
-                    else {
-                        logger.info('User found for ID: ' + userID + '.');
-                        userGUID = userData.data[0].id;
-                        siteID = userData.data[0].siteid;
-                        currentFirstName = userData.data[0].firstname;
-                        currentLastName = userData.data[0].lastname;
-                        currentMiddleInitial = userData.data[0].middleinitial;
-                        currentEmailAddress = userData.data[0].emailaddress;
-                    }
-                }
-                else {
-                    throw new Error('There was an error when searching for the user ' + userID + '.');
-                }
-            });
-        })
-        .then(function () {
             //Disable the user account if needed. Immediately return a reponse; no further actions taken.
             if (action == 'Disable') {
                 var userDisableObj = {};
@@ -185,7 +191,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
                         returnObj[0] = 'Success';
                         returnObj[1] = 'User account disabled.';
                         returnObj[2] = userGUID;
-                        returnObj[3] = siteID;
                         return response.json(returnObj);
                     }
                     else {
@@ -202,7 +207,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 if (NewFirstName.value && NewFirstName.value != '' && NewFirstName.value != currentFirstName) {
                     userUpdateObj.firstname = NewFirstName.value;
                 }
-            }  
+            }
 
             if (NewLastName) {
                 if (NewLastName.value && NewLastName.value != '' && NewLastName.value != currentLastName) {
@@ -392,7 +397,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
             returnObj[0] = 'Success';
             returnObj[1] = 'User updated.';
             returnObj[2] = userGUID;
-            returnObj[3] = siteID;
             return response.json(returnObj);
         })
         .catch(function (err) {
