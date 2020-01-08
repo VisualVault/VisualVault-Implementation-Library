@@ -46,16 +46,6 @@ $.when(
                 VV.Form.SetFieldValue('User Disabled', 'false');
                 VV.Form.SetFieldValue('Status', 'Active');
 
-                //LibUserUpdate returns the user GUID. If received successfully, set that field. 
-                if (resp.data[2]) {
-                    VV.Form.SetFieldValue('UsID', resp.data[2]);
-                }
-
-                //LibUserUpdate returns the user site ID. If received successfully, set that field. 
-                if (resp.data[3]) {
-                    VV.Form.SetFieldValue('VV Location', resp.data[3]);
-                }
-
                 //Display a success message
                 messageData = 'The user has been enabled, and the record has been saved.';
                 VV.Form.Global.DisplayMessaging(messageData);
