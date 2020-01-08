@@ -24,7 +24,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     0 - Status: Success, Error
 		            1 - Message
                     2 - User GUID
-                    3 - User Site ID
 
      Pseudocode:   1. Validate information
                    2. Call LibUserUpdate
@@ -130,11 +129,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
                         //LibUserUpdate returns the user GUID. If received successfully, pass back client side
                         if (userResp.data[2]) {
                             returnObj[2] = userResp.data[2];
-                        }
-
-                        //LibUserUpdate returns the user site ID. If received successfully, pass back client side
-                        if (userResp.data[3]) {
-                            returnObj[3] = userResp.data[3];
                         }
                     }
                     else if (userResp.data[0] == 'Error') {
