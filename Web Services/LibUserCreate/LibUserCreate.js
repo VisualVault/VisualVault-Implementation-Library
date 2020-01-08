@@ -19,6 +19,12 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Customer:      Visual Vault
      Purpose:       This process will allow a user to be created with various potential options.
                     Those options will be turned on or off depending on what is passed to the NodeJS process.
+                    NOTE: If the user is found to exist already, whether enabled or disabled, this script will simply return that info. No other actions will be taken. 
+
+     IMPORTANT CONFIGURATION NOTE: A query must be configured in Default queries (NOT in form data queries) that reflects the below:
+                        SELECT UsUserID, UsId, UsFirstName, UsMiddleInit, UsLastName, UsEmailAddress, UsSiteID, UsEnabled
+                        FROM dbo.Users
+
      Parameters: The following represent variables passed into the function from an array:
                 User Id - (String, Required)
                 Email Address - (String, Required)
@@ -47,11 +53,10 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 0 - Status: Success, Minor Error, Error
 		        1 - Message
                 2 - User GUID
-                3 - Site ID
 
      Psuedo code: 
         1. Validate passed in parameters
-        2. Search for the user ID provided to see if the user already exists.
+        2. Search for the user ID provided to see if the user already exists. Use a custom query to return disabled users too.
             a. If user already exists, process will end and notify user of the duplicate. UsID and SiteID are returned.
         3. Search the Site Name passed in to determine if it exists.
                     a. If site already exists then it will save the SiteID pass that on.
@@ -84,6 +89,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      1/18/19 - Alex Rhee: Made sure all API calls are being measured by Resp.meta.status === 200.
      09/25/2019 - Removed uppercase I and lowercase L at customer request.
      12/19/2019 - Kendra Austin: Script rewrite. Add hyphen (-) to user ID chars, add configuration to use or not use Comm Log, send only one custom email.
+     01/08/2020 - Kendra Austin: Switch out getUsers to a custom query. Allows disabled users to be returned so better error handling.
      */
 
     logger.info('Start of the process UserCreate at ' + Date());
@@ -101,6 +107,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
     var SysChangePass = 'true';                             //Require user to change password on first login. Set to 'true' for required; set to 'false' for not required.
     var createCommLog = true;                               //Dictates whether a communication log is created to reflect the custom welcome email sent to the user. Passwords are redacted.
     var commLogTemplateID = 'Communications Log';           //When createCommLog is true, this is the template name of the Communications Log. Used to post form. 
+    var userQueryName = 'User Lookup';                      //The name of the custom query in Default queries (NOT in form data queries)
     var timeZone = 'America/Phoenix';                       //Set the local time zone here. Used when posting Communications Logs
 
     /* Reference List of Moment Timezones: 
@@ -405,30 +412,44 @@ module.exports.main = function (ffCollection, vvClient, response) {
     })
         .then(function () {
             //Search for the user ID provided to see if the user already exists
-            var currentUserdata = {};
-            currentUserdata.q = "[name] eq '" + userID + "'";
-            currentUserdata.fields = "id,name,userid,siteid,firstname,lastname,emailaddress";
+            var userQueryParams = { filter: "[UsUserID] = '" + userID + "'" }
 
-            return vvClient.users.getUser(currentUserdata).then(function (userResp) {
-                var userData = JSON.parse(userResp);
-                if (userData.meta.status === 200) {
-                    if (userData.data.length > 0) {
-                        if (userData.data.length == 1) {
-                            //One user found. Return information and a specific message to measure on the client side. 
-                            returnObj[2] = userData.data[0].id;
-                            returnObj[3] = userData.data[0].siteid;
+            return vvClient.customQuery.getCustomQueryResultsByName(userQueryName, userQueryParams).then(function (userRes) {
+                var userData = JSON.parse(userRes);
+                if (userData.meta.status == 200) {
+                    if (userData.data.length == 1) {
+                        //Exactly one user found. Save all user info for later use. 
+                        var userInfo = userData.data[0];
+                        userGUID = userInfo.usId;
+                        returnObj[2] = userGUID;
+
+                        //Measure the found user is enabled or disabled. Send a correct error.
+                        var userEnabled = userInfo.usEnabled;           //This is 0 or 1
+                        if (userEnabled == 1) {
                             throw new Error('User Exists');
                         }
+                        else if (userEnabled == 0) {
+                            throw new Error('User Disabled');
+                        }
                         else {
-                            throw new Error('More than one existing user was found with ID ' + userID + '. This is an invalid state. Please notify a system administrator.');
+                            throw new Error('A duplicate user was found, but the process was unable to determine if the user account is currently enabled or disabled. '
+                                + 'Please try again or contact a system administrator.');
                         }
                     }
-                    else {
+                    else if (userData.data.length == 0) {
+                        //No user found. This is good.
                         logger.info('Searched for existing users with ID ' + userID + '. None found. Continuing the process.');
                     }
+                    else {
+                        //Many users found. Invalid state. 
+                        throw new Error('More than one user was found for ID: ' + userID + '. This is an invalid state. Please notify a system administrator.');
+                    }
+                }
+                else if (userData.meta.status == 404) {
+                    throw new Error('The custom query to find users was not found. Please ensure that a query named ' + userQueryName + ' has been configured in the default queries area.');
                 }
                 else {
-                    throw new Error('The call to search for an existing user with ID ' + userID + ' returned with an error.');
+                    throw new Error('There was an error when searching for the user ' + userID + '.');
                 }
             })
         })
@@ -742,10 +763,8 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 returnObj[1] = 'All actions completed successfully.';
             }
 
-            //Always pass back the user GUID and Site ID, since user was created.
+            //Always pass back the user GUID, since user was created.
             returnObj[2] = userGUID;
-            returnObj[3] = siteID;
-
             return response.json(returnObj);
         })
         .catch(function (err) {
