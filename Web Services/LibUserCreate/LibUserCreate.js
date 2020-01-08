@@ -52,7 +52,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Psuedo code: 
         1. Validate passed in parameters
         2. Search for the user ID provided to see if the user already exists.
-            a. If user already exists, process will end and notify user of the duplicate.
+            a. If user already exists, process will end and notify user of the duplicate. UsID and SiteID are returned.
         3. Search the Site Name passed in to determine if it exists.
                     a. If site already exists then it will save the SiteID pass that on.
                     b. If site does not exist then it will create a site by running postSite
@@ -243,8 +243,8 @@ module.exports.main = function (ffCollection, vvClient, response) {
             siteName = siteName.value;
         }
 
-        //Group List
-        if (!groupList || !groupList.value) {
+        //Group List. Allow an empty string.
+        if (!groupList || (!groupList.value && groupList.value.trim() != '')) {
             errors.push("The Group List parameter was not supplied.");
         }
         else {
@@ -323,7 +323,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
         if (!folderPath || !folderPath.value || folderPath.value.trim() == '') {
             //Not required. Set to empty string to avoid undefined errors.
             folderPath = '';
-            createFolder = false; 
+            createFolder = false;
         }
         else {
             folderPath = folderPath.value;
@@ -413,7 +413,15 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 var userData = JSON.parse(userResp);
                 if (userData.meta.status === 200) {
                     if (userData.data.length > 0) {
-                        throw new Error('An existing user was found with ID ' + userID + '. Unable to create a duplicate.');
+                        if (userData.data.length == 1) {
+                            //One user found. Return information and a specific message to measure on the client side. 
+                            returnObj[2] = userData.data[0].id;
+                            returnObj[3] = userData.data[0].siteid;
+                            throw new Error('User Exists');
+                        }
+                        else {
+                            throw new Error('More than one existing user was found with ID ' + userID + '. This is an invalid state. Please notify a system administrator.');
+                        }
                     }
                     else {
                         logger.info('Searched for existing users with ID ' + userID + '. None found. Continuing the process.');
@@ -443,7 +451,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                         siteID = siteData.data[0].id;
 
                         //Do not need to create the site.
-                        siteExists = true; 
+                        siteExists = true;
                     }
                     else {
                         //Found more than one matching site. This is not a valid state. 
@@ -536,7 +544,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
             newUserObject.userid = userID;
             newUserObject.firstName = firstName;
             newUserObject.middleInitial = middleInitial;
-            newUserObject.lastName = lastName; 
+            newUserObject.lastName = lastName;
             newUserObject.emailaddress = emailAddress;
             newUserObject.password = userPassword;
             newUserObject.mustChangePassword = SysChangePass;
@@ -547,14 +555,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
             else {
                 newUserObject.sendEmail = 'false';
             }
-            
+
             var userParams = {};
 
             return vvClient.users.postUsers(userParams, newUserObject, siteID).then(function (userResp) {
                 if (userResp.meta.status === 200) {
                     //User created. Store the user GUID for passing back to the calling function. 
                     //At this point, future processes should return Success or Minor Errors. Not throwing any more errors because the user has been created.
-                    userGUID = userResp.data.id; 
+                    userGUID = userResp.data.id;
                 }
                 else {
                     throw new Error('The call to create the user returned with an error.');
@@ -671,7 +679,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     if (folderData.meta.status === 200) {
                         if (folderData.data.length > 0) {
                             //Folder found. Log the ID but do not create the folder.
-                            folderId = folderData.data[0].id; 
+                            folderId = folderData.data[0].id;
                         }
                         else {
                             logger.info("The call to find a folder at " + folderPath + " returned with no duplicates. Continuing the process.");
