@@ -23,8 +23,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     Any item in the array at points 2 or above can be used to return multiple items of information.
                     0 - Status: Success, Error
 		            1 - Message
-                2 - user GUID
-                3 - user Site ID
 
      Pseudocode:   1. Validate information
                    2. Call LibUserUpdate
@@ -44,7 +42,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
     //Script Variables
     var errors = [];                    //Used to hold errors as they are found, to return together.
     var revisionId = ffCollection.getFormFieldByName('REVISIONID');
-    var userGUID = ffCollection.getFormFieldByName('UsID').value;
     var userID = ffCollection.getFormFieldByName('Email').value;
 
     //Initialization of the return object
@@ -64,10 +61,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
         }
 
         //Validate other passed in fields
-        if (userGUID.trim() == '') {
-            errors.push('The UsID field is not populated. Unable to enable the user. Please contact a system administrator.');
-        }
-
         if (userID.trim() == '') {
             errors.push('The field that contains the username is not populated. Unable to enable the user. Please contact a system administrator.');
         }
@@ -86,11 +79,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
             updateUserObject.push(userInfo);
 
             userInfo = {};
-            userInfo.name = 'User GUID';
-            userInfo.value = userGUID;
-            updateUserObject.push(userInfo);
-
-            userInfo = {};
             userInfo.name = 'User ID';
             userInfo.value = userID;
             updateUserObject.push(userInfo);
@@ -104,11 +92,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
                         //LibUserUpdate returns the user GUID. If received successfully, pass back client side
                         if (userResp.data[2]) {
                             returnObj[2] = userResp.data[2];
-                        }
-
-                        //LibUserUpdate returns the user site ID. If received successfully, pass back client side
-                        if (userResp.data[3]) {
-                            returnObj[3] = userResp.data[3];
                         }
                     }
                     else if (userResp.data[0] == 'Error') {
