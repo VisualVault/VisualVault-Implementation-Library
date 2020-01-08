@@ -142,7 +142,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     //Measure that we received something in the return array
                     if (createUserResp.data.length > 0) {
                         //Measure what was received in the return array
-                        if (createUserResp.data[0] == 'Success' || createUserResp.data[0] == 'Minor Error' || (createUserResp.data[0] == 'Error' && createUserResp.data[1] == 'User Exists')) {
+                        if (createUserResp.data[0] == 'Success' || createUserResp.data[0] == 'Minor Error' || createUserResp.data[1] == 'User Exists' || createUserResp.data[1] == 'User Disabled') {
                             //Build returnObj from createUserResp.data. Send back all info.
                             createUserResp.data.forEach(function (arrayIndex) {
                                 returnObj.push(arrayIndex);
