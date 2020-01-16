@@ -20,11 +20,9 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Purpose:       This process will allow a user to be created with various potential options.
                     Those options will be turned on or off depending on what is passed to the NodeJS process.
                     NOTE: If the user is found to exist already, whether enabled or disabled, this script will simply return that info. No other actions will be taken. 
-
      IMPORTANT CONFIGURATION NOTE: A query must be configured in Default queries (NOT in form data queries) that reflects the below:
                         SELECT UsUserID, UsId, UsFirstName, UsMiddleInit, UsLastName, UsEmailAddress, UsSiteID, UsEnabled
                         FROM dbo.Users
-
      Parameters: The following represent variables passed into the function from an array:
                 User Id - (String, Required)
                 Email Address - (String, Required)
@@ -36,6 +34,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 Password - (String, Optional) If blank or not passed in, random password will be generated
                 Folder Path - (String, Optional) If blank or not passed in, a folder will not be created.
                 Folder Permissions - (String, Optional unless folder path was provided and config variable forceSecurities set to true.) Pass in 'Viewer', 'Editor', or 'Owner'
+                    IMPORTANT NOTE: This feature should not be used without discussion. Assigning user-based security to folders can cause performance issues. 
                     'Viewer' - The created user account will be assigned viewer permissions to the created folder
                     'Editor' - The created user account will be assigned editor permissions to the created folder
                     'Owner' - The created user account will be assigned owner permissions to the created folder
@@ -46,14 +45,24 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 Email Subject - (String, Required when Send Email is Custom or Both) Subject of the username and password email
                 Email Body - (String, Required when Send Email is Custom or Both) Body of username and password email.
                               When Send Email is 'Custom', [Username] and [Password] must be included in the email body.
-                Related Records - (Array of Strings, optional) The Form IDs of any records that the Communication Log should be related to. 
+                Related Records - (Array of Strings, optional) The Form IDs of any records that the Communication Log should be related to.
+                Other Fields - (Object, optional) This is an object of other field names with field values to update on the Communications Log.
+                    Example format:
+                    {
+                        name: 'Other Fields', value: {
+                            "Individual ID": indivId,
+                            "Record ID": formId
+                        }
+                    }
          
     Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
                 Any item in the array at points 2 or above can be used to return multiple items of information.
                 0 - Status: Success, Minor Error, Error
-		        1 - Message
+                    //Minor Error represents any errors that occurred after the user account was created.
+                    //If updating form record fields to reflect an "account created" status, update the fields when Success or Minor Error returned.
+                1 - Message
+                    //On Error response, "User Exists" and "User Disabled" messages should be handled specifically.
                 2 - User GUID
-
      Psuedo code: 
         1. Validate passed in parameters
         2. Search for the user ID provided to see if the user already exists. Use a custom query to return disabled users too.
@@ -77,10 +86,8 @@ module.exports.main = function (ffCollection, vvClient, response) {
         11. If all steps above completed successfully, check if any errors were logged in the error array.
             a. If minor errors occurred, return ‘Minor Error’ with details.
             b. If no errors, return ‘Success’
-
      Date of Dev:   12/4/2018
-     Last Rev Date: 12/19/2019
-
+     Last Rev Date: 01/16/2020
      Revision Notes:
      12/04/2018 - Alex Rhee: Initial creation of the business process.
      12/18/2018 - Alex Rhee: Code reorganized and rewritten to follow promise chaining examples. Still missing folder provisioning.
@@ -90,6 +97,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      09/25/2019 - Removed uppercase I and lowercase L at customer request.
      12/19/2019 - Kendra Austin: Script rewrite. Add hyphen (-) to user ID chars, add configuration to use or not use Comm Log, send only one custom email.
      01/08/2020 - Kendra Austin: Switch out getUsers to a custom query. Allows disabled users to be returned so better error handling.
+     01/16/2020 - Kendra Austin: Add Other Fields to parameters for Comm Log creation. Make comments about folder security.
      */
 
     logger.info('Start of the process UserCreate at ' + Date());
@@ -102,8 +110,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
     var userNameChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.@+-";
 
     var PasswordLength = 8;                                 //Password length when a random password is generated
-    var minPasswordLength = 5;                              //Minimum length for password when one is passed in to be used.
-    var forceSecurities = true;                             //Force the user to input security permissions when passing in folder paths, if set to true an error will be sent back if the user passes in a folder but no folder security or an invalid folder security. If false and not passed in, folder is created without security. 
+    var minPasswordLength = 5;                              //Minimum length for password when one is passed in to be used.                    
     var SysChangePass = 'true';                             //Require user to change password on first login. Set to 'true' for required; set to 'false' for not required.
     var createCommLog = true;                               //Dictates whether a communication log is created to reflect the custom welcome email sent to the user. Passwords are redacted.
     var commLogTemplateID = 'Communications Log';           //When createCommLog is true, this is the template name of the Communications Log. Used to post form. 
@@ -116,6 +123,12 @@ module.exports.main = function (ffCollection, vvClient, response) {
     Central Time: America/Chicago
     Eastern Time: America/New_York
     */
+
+    //forceSecurities: KEEP THIS FALSE UNLESS GIVEN EXPLICIT PERMISSION.
+    //Force the user to input security permissions when passing in folder paths. 
+    //If set to true an error will be sent back if the user passes in a folder but no folder security or an invalid folder security.
+    //If false and not passed in, folder is created without security. 
+    var forceSecurities = false; 
 
     //------------------END CONFIG OPTIONS----------------
 
@@ -133,6 +146,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
     //Admin options for User Creation
     var sendEmail = ffCollection.getFormFieldByName('Send Email');
     var relateToRecords = ffCollection.getFormFieldByName('Related Records');
+    var otherFields = ffCollection.getFormFieldByName('Other Fields');
     var folderPath = ffCollection.getFormFieldByName('Folder Path');
     var securityLevel = ffCollection.getFormFieldByName('Folder Permissions');
 
@@ -405,6 +419,15 @@ module.exports.main = function (ffCollection, vvClient, response) {
             }
         }
 
+        //Other Fields
+        if (!otherFields || !otherFields.value) {
+            //Not required. Set to empty object to avoid undefined errors.
+            otherFields = {};
+        }
+        else {
+            otherFields = otherFields.value;
+        }
+
         //Return all validation errors at once.
         if (errors.length > 0) {
             throw new Error(errors);
@@ -653,6 +676,11 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 targetFields['Communication Date'] = localTime;
                 targetFields['Approved'] = 'Yes';
                 targetFields['Communication Sent'] = 'Yes';
+
+                //Load additional fields
+                for (var property1 in otherFields) {
+                    targetFields[property1] = otherFields[property1];
+                }
 
                 return vvClient.forms.postForms(null, targetFields, commLogTemplateID).then(function (postResp) {
                     if (postResp.meta.status === 201 || postResp.meta.status === 200) {
