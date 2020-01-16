@@ -23,7 +23,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
 
      Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
                     Any item in the array at points 2 or above can be used to return multiple items of information.
-                    0 - Status: Success, Minor Error, Error
+                    0 - Status: Success, Minor Error, Error     //These statuses reflect what is sent back from LibUserCreate
 		            1 - Message
                     2 - User GUID
 
@@ -34,10 +34,11 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     - Pass in all possible info, VV should send its standard email and a custom email should be sent
 
      Date of Dev:   01/07/2020
-     Last Rev Date:
+     Last Rev Date: 01/16/2020
 
      Revision Notes:
      01/07/2020 - Kendra Austin: Initial creation of the business process.
+     01/16/2020 - Kendra Austin: Update to remove folder permissions and add Other Fields. 
 
      */
 
@@ -138,7 +139,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                             //Found the email. Access the subject and body
                             emailSubject = emailData.data[0]['subject Line'];
                             emailBody = emailData.data[0]['body Text'];
-                            
+
                             //Replace any tokens that are not [Username] and [Password] here. This example includes [First Name] and [URL]
                             emailBody = emailBody.split('[First Name]').join(firstName);
                             emailBody = emailBody.split('[URL]').join(baseURL);
@@ -208,11 +209,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
             createUserArr.push(userInfoObj);
 
             userInfoObj = {};
-            userInfoObj.name = 'Folder Permissions';
-            userInfoObj.value = 'Viewer';
-            createUserArr.push(userInfoObj);
-
-            userInfoObj = {};
             userInfoObj.name = 'Send Email';
             userInfoObj.value = 'Both';
             createUserArr.push(userInfoObj);
@@ -230,6 +226,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
             userInfoObj = {};
             userInfoObj.name = 'Related Records';
             userInfoObj.value = [recordID];         //Note that this example uses the current record, so it must be saved before this script is run to be successful.
+            createUserArr.push(userInfoObj);
+
+            userInfoObj = {};
+            userInfoObj.name = 'Other Fields';
+            userInfoObj.value = {
+                "Individual ID": 'Primary Form ID',
+                "Record ID": recordID,
+            };
             createUserArr.push(userInfoObj);
 
             return vvClient.scripts.runWebService('LibUserCreate', createUserArr).then(function (createUserResp) {
