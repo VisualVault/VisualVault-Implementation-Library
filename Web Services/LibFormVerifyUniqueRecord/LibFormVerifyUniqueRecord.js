@@ -1,4 +1,3 @@
-var vvEntities = require("../VVRestApi");
 var logger = require('../log');
 
 module.exports.getCredentials = function () {
