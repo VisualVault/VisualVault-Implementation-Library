@@ -209,6 +209,8 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     var commLogSendType = emailTemplateObj.data[0]['send Select'];
                     var subject = emailTemplateObj.data[0]['subject Line'];
                     var body = emailTemplateObj.data[0]['body Text'];
+                    var sendToEmails = emailTemplateObj.data[0]['send To'];
+                    var ccToEmails = emailTemplateObj.data[0]['send CC'];
                     //End pull in data from the email template form.
 
                     //Start replacing tokens in body
@@ -230,11 +232,12 @@ module.exports.main = function (ffCollection, vvClient, response) {
 
                     //If any unreplaced tokens found, throw or push error as appropriate based on configurable setting.
                     if (badTokenList.length > 0) {
+                        var unreplacedTokens = badTokenList.join(', ');
                         if (sendWithIncompleteTokens == 'Yes') {
-                            errors.push('One or more tokens were not replaced in the generated notification. The tokens are: ' + badTokenList.join(', ') + ". The communication log has been created.");
+                            errors.push('One or more tokens were not replaced in the generated notification. The tokens are: ' + unreplacedTokens + '. The communication log has been created.');
                         }
                         else {
-                            throw new Error('Please contact a System Administrator with this information. One or more tokens have not been replaced. The tokens are : ' + badTokenList.join(', '));
+                            throw new Error('Please contact a System Administrator with this information. One or more tokens have not been replaced. The tokens are : ' + unreplacedTokens);
                         }
                     }
                     //End checking body for unreplaced tokens
@@ -243,16 +246,16 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     var sendEmail = '';
                     switch (sendToSelector) {
                         case sendToDDOne:   //Defined List
-                            sendEmail = emailTemplateObj.data[0]['send To'];
+                            sendEmail = sendToEmails;
                             break;
                         case sendToDDTwo:   //Context
                             sendEmail = additionaEmailAddress;
                             break;
                         case sendToDDThree: //Both
-                            sendEmail = emailTemplateObj.data[0]['send To'] + ',' + additionaEmailAddress;
+                            sendEmail = sendToEmails + ',' + additionaEmailAddress;
                             break;
                         case 'Select Item':
-                            sendEmail = emailTemplateObj.data[0]['send To'] + ',' + additionaEmailAddress;
+                            sendEmail = sendToEmails + ',' + additionaEmailAddress;
                             break;
                     }
 
@@ -275,16 +278,16 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     var sendEmailCC = '';
                     switch (sendCCSelector) {
                         case sendCCDDOne:       //Defined List
-                            sendEmailCC = emailTemplateObj.data[0]['send CC'];
+                            sendEmailCC = ccToEmails;
                             break;
                         case sendCCDDTwo:       //Context
                             sendEmailCC = CCadditionaEmailAddress;
                             break;
                         case sendCCDDThree:     //Both
-                            sendEmailCC = emailTemplateObj.data[0]['send CC'] + ',' + CCadditionaEmailAddress;
+                            sendEmailCC = ccToEmails + ',' + CCadditionaEmailAddress;
                             break;
                         case 'Select Item':
-                            sendEmailCC = emailTemplateObj.data[0]['send CC'] + ',' + CCadditionaEmailAddress;
+                            sendEmailCC = ccToEmails + ',' + CCadditionaEmailAddress;
                             break;
                     }
 
