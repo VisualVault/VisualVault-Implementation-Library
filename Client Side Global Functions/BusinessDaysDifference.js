@@ -15,6 +15,7 @@
     Revision Notes:
     06/01/2017 - Jason Hatch: Initial creation of the business process. 
     01/28/2019 - Jason Hatch: Certain days of the week are not calculating correctly.  Adjusted to have calcuation greater than 0.
+    02/05/2020 - Jason Hatch and Max Rehbein:  Updated to handle same day excluding times.
 */
 
 
@@ -26,9 +27,6 @@ var one_day = 1000 * 60 * 60 * 24;
 var date1casted = new Date(date1);
 var date2casted = new Date(date2);
 
-var a = date1casted.toISOString;
-var b = date2casted.toISOString;
-
 // Handle special cases
 var startDay = date1casted.getDay();
 var endDay = date2casted.getDay();
@@ -36,8 +34,10 @@ var endDay = date2casted.getDay();
 
 var days = 0;
 
-if (date1casted.getDate() != date2casted.getDate()) {
-
+if (date1casted.getFullYear() == date2casted.getFullYear() && date1casted.getDate() == date2casted.getDate() && date1casted.getMonth() == date2casted.getMonth()) {
+    days = 0;
+}
+else {
     // Convert both dates to milliseconds
     var date1_ms = date1casted.getTime();
     var date2_ms = date2casted.getTime();
@@ -101,9 +101,6 @@ if (date1casted.getDate() != date2casted.getDate()) {
             days = days + 2;
         }
     }
-}
-else {
-    days = 0;
 }
 
 return days;
