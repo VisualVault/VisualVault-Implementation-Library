@@ -15,7 +15,7 @@ module.exports.getCredentials = function () {
 module.exports.main = function (ffCollection, vvClient, response) {
     /**
      * Script Name:     RegAppCompleteRefund
-     * Customer:        City Of Lincoln
+     * Customer:        VisualVault Library
      * Purpose:         The purpose of this script is to allow for refund request to be completed
      * Parameters:
      *                  None
