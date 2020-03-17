@@ -9,7 +9,7 @@
 str = str.toLowerCase();
 var hyphenIncluded = false;
 
-if (str.indexOf('-') > 0){
+if (str.indexOf('-') >= 0){
     hyphenIncluded = true;
 }
 
