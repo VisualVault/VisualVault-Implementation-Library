@@ -13,7 +13,7 @@ module.exports.getCredentials = function () {
     return options;
 };
 
-module.exports.main = function (vvClient, response, token) {
+module.exports.main = async function (vvClient, response, token) {
     /*Script Name:   CommunicationLogSendImmediate
      Customer:      VisualVault
      Purpose:       Purpose of this script is acquire list of communication logs that need to be sent immediately as an email and send them to the recipients.
@@ -22,12 +22,14 @@ module.exports.main = function (vvClient, response, token) {
                     - Message will be sent back to VV as part of the ending of this scheduled process.
     Process Pseudocode:   The following documents the pseudo code for this process.
                     Step1:  Run a query to acquire list of communications logs that are marked to be sent.
-                    Step2:  Load into an array.
-                    Step3:  Send an email and update the form with sending information if the send was successful.
-                    Step4:  Measure results and communicate completion.
+                    Step2:  For each item in the array:
+                                a. Fetch the documents that are related to the communications log
+                                b. Send the email message (with documents)
+                                c. Wait a configurable number of milliseconds
+                    Step3:  Measure results and communicate completion.
            
      Date of Dev:   05/14/2019
-     Last Rev Date: 08/03/2019
+     Last Rev Date: 04/27/2020
 
      Revision Notes:
      05/14/2019 - Jason Hatch:  Initial creation of the business process. 
@@ -37,6 +39,7 @@ module.exports.main = function (vvClient, response, token) {
      08/03/2019 - Jason Hatch:  Added timezone mechanisms to set communication time in Eastern time.
      08/06/2019: Rufus Peoples - For use in Lincoln Comm Log
      08/19/2019 - Kendra Austin: updated time zone to Central for Lincoln. 
+     04/27/2020 - Kendra Austin: Updated to include timeout mechanism and convert to async/await.
      */
 
 
@@ -47,121 +50,119 @@ module.exports.main = function (vvClient, response, token) {
     //CONFIGURABLE VALUES IN THE FOLLOWING AREA.
     var commLogTemplateID = 'Communications Log';
     var commLogQuery = 'Communication Send Immediately';
-    var timeZone = 'America/Chicago';
     var frequencyEmailSendinms = 5000;   //This is the number of milleseconds delay between sending each email.
 
+    var timeZone = 'America/New_York';
+    /* Reference List of Moment Timezones: 
+    Pacific Time: America/Los_Angeles
+    Arizona Time: America/Phoenix
+    Central Time: America/Chicago
+    Eastern Time: America/New_York
+    */
+    
     //END OF CONFIGURABLE VALUES
 
     //Other globally used variables.
     var errorLog = [];   //Array for capturing error messages that may occur.
 
-    //Parameter for the query.  Does not need a filter at this time.  
-    var queryparams = {};
-    queryparams = { filter: "" };
+    try {
+        //This function takes a configurable number of milliseconds to complete and returns a promise
+        var waitFunction = function () {
+            return new Promise(function (resolve) {
+                setTimeout(function () {
+                    resolve('Waited');
+                }, frequencyEmailSendinms);
+            });
+        };
 
-    const getDocuments = (logID) => {
-        var getRelatedDocsParams = {};
-        return vvClient.forms.getFormRelatedDocs(logID, getRelatedDocsParams);
-    }
-    const getCommLog = (ComLogID) => {
-        //Query communication log
-        let formClientInfoData = {};
-        formClientInfoData.q = "[Comm Log ID] eq '" + ComLogID + "'";
+        //Parameter for the query.
+        var queryparams = {};
 
-        return vvClient.forms.getForms(formClientInfoData, commLogTemplateID)
-    }
-    let cntr = 0;
-    const sendEmail = (dataRow, documents) => {
-        //Load the email object.
-        var emailObj = {};
-        emailObj.recipients = dataRow['email Recipients'];
-        emailObj.ccrecipients = dataRow['cc'];
-        emailObj.subject = dataRow['subject'];
-        emailObj.body = dataRow['email Body'];
-        emailObj.hasAttachments = (documents.data.length > 0);
-        emailObj.documents = documents.data.map(o => o.id);
+        //Run query to get the communication log items.
+        let commLogs = await vvClient.customQuery.getCustomQueryResultsByName(commLogQuery, queryparams);
+        var responseItem = JSON.parse(commLogs);
+        if (responseItem.meta.status !== 200) {
+            throw new Error('Error encountered when running the query to get communication logs that need to be sent.');
+        }
 
-        //Send email 
-        return vvClient.email.postEmails(null, emailObj)
-    }
-    const updateRecod = (recID) => {
-        //Setup time in Eastern time.
-        var sendDate = momentTz().tz(timeZone).format('L');
-        var sendTime = momentTz().tz(timeZone).format('LT');
-        var localScheduledTime = sendDate + " " + sendTime;
+        if (responseItem.data.length === 0) {
+            throw new Error('No communication log records found.');
+        }
 
-        var updateObj = {};
-        updateObj['Communication Date'] = localScheduledTime;
-        updateObj['Communication Sent'] = 'Yes'
+        var commLogsToSend = responseItem.data;
+        var numberToSend = responseItem.data.length;
 
-        return vvClient.forms.postFormRevision(null, updateObj, commLogTemplateID, recID);
-    }
-    //Run query to get the communication log items.
-    vvClient.customQuery.getCustomQueryResultsByName(commLogQuery, queryparams)
-        .then(
-        function (promise) {
-            var responseItem = JSON.parse(promise);
-            if (responseItem.meta.status == 200 && responseItem.data.length > 0) {
-                var processCommLog = Q.resolve();
+        for (var i = 0; i < numberToSend; i++) {
+            const locItem = commLogsToSend[i];
+            try {
+                //For each communications log to send: 
+                //1. Fetch the documents that are related to the communications log
+                //2. Send the email message (with documents)
+                //3. Wait a configurable number of milliseconds
 
-                //Load the items into the commarray for processing.
-                responseItem.data.forEach(
-                    function (item) {
-                        processCommLog = processCommLog.then(
-                            async function () {
-                                const locItem = item;
-                                try {
-                                    const log = JSON.parse(await getCommLog(locItem['comm Log ID']));
-                                    const docs = JSON.parse(await getDocuments(log.data[0].revisionId));
-                                    const emailResp = await sendEmail(locItem, docs)
-                                    if (emailResp.meta['status'] === 201) {
-                                        const updateResp = await updateRecod(locItem.dhid);
-                                        if (updateResp.meta.status !== 201) {
-                                            throw new Error('Error updating record ' + locItem['comm Log ID'] + ' after email was sent.');
-                                        }
-                                        else {
-                                            //This is a throttle to slow down the sending mechanism.  Previously server keeps disconnecting.
-                                            setTimeout(() => { }, frequencyEmailSendinms);
-                                        }
-                                    }
-                                    else
-                                        throw new Error('Error Sending Emails for ' + locItem['comm Log ID'] + '.');
-                                }
-                                catch (err) {
-                                    errorLog.push(err);
-                                }
-                            }
-                        );
-                    }
-                )
-                return processCommLog;
+                //Fetch Docs
+                var getRelatedDocsParams = {};
+                let relatedDocs = await vvClient.forms.getFormRelatedDocs(locItem.dhid, getRelatedDocsParams);
+                var docResp = JSON.parse(relatedDocs);
+                if (docResp.meta.status !== 200) {
+                    throw new Error('The call to get related documents for email returned with an error.');
+                }
+                let docsData = docResp.data;
+
+                //Load the email object.
+                var emailObj = {};
+                emailObj.recipients = locItem['email Recipients'];
+                emailObj.ccrecipients = locItem['cc'];
+                emailObj.subject = locItem['subject'];
+                emailObj.body = locItem['email Body'];
+                emailObj.hasAttachments = docsData.length > 0;  //boolean
+                emailObj.documents = docsData.map(o => o.id);   //array of doc IDs.
+
+                //Send email 
+                let emailResp = await vvClient.email.postEmails(null, emailObj);
+                if (emailResp.meta.status !== 201) {
+                    throw new Error('An error occurred while attempting to send the email');
+                }
+
+                //Load object to update comm log record. Include local timestamp
+                var updateObj = {};
+                var sendDate = momentTz().tz(timeZone).format('L');
+                var sendTime = momentTz().tz(timeZone).format('LT');
+                var localScheduledTime = sendDate + " " + sendTime;
+                updateObj['Communication Date'] = localScheduledTime;
+                updateObj['Communication Sent'] = 'Yes';
+
+                //Update comm log record to reflect sent
+                let updateRecordResp = await vvClient.forms.postFormRevision(null, updateObj, commLogTemplateID, locItem.dhid);
+                if (updateRecordResp.meta.status !== 201) {
+                    throw new Error('Error updating record ' + locItem['comm Log ID'] + ' after email was sent.');
+                }
+
+                //Wait a configurable number of milliseconds
+                let waitingPeriod = await waitFunction();
+                if (waitingPeriod !== 'Waited') {
+                    throw new Error('The waiting period did not behave as expected.');
+                }
             }
-            else if (responseItem.meta.status != 200) {
-                throw new Error('Error encountered when running the query.');
-            }
-            else {
-                throw new Error('No communication log records found.');
+            catch (err) {
+                errorLog.push(err);
             }
         }
-        )
-        .then(
-        function () {
-            if (errorLog.length > 0) {
-                //Errors captured
-                logger.info(JSON.stringify(errorLog));
-                throw new Error('Error encountered during processing.  Please contact support to troubleshoot the errors that are occurring.');
-            }
-            else {
-                // response.json('200', 'Emails processed successfully');
-                return vvClient.scheduledProcess.postCompletion(token, 'complete', true, 'Emails processed successfully');
-            }
-            //Communication Log updated successfully
+
+        //Do this last. Measure if any errors occurred during the process.
+        if (errorLog.length > 0) {
+            //Errors captured
+            logger.info(JSON.stringify(errorLog));
+            throw new Error('Error encountered during processing.  Please contact support to troubleshoot the errors that are occurring.');
         }
-        )
-        .catch(
-        function (err) {
-            // response.json('200', 'Error encountered during processing.  Error was ' + err );
-            return vvClient.scheduledProcess.postCompletion(token, 'complete', true, 'Error encountered during processing.  Error was ' + err);
+        else {
+            // response.json('200', 'Emails processed successfully');
+            return vvClient.scheduledProcess.postCompletion(token, 'complete', true, 'Emails processed successfully');
         }
-        );
-}
+    }
+    catch (err) {
+        // Return errors captured.
+        return vvClient.scheduledProcess.postCompletion(token, 'complete', true, 'Error encountered during processing.  Error was ' + err);
+
+    }
+};
