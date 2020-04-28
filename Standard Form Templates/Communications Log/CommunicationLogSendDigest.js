@@ -13,7 +13,7 @@ module.exports.getCredentials = function () {
     return options;
 };
 
-module.exports.main = function (vvClient, response, token) {
+module.exports.main = async function (vvClient, response, token) {
     /*Script Name:   CommunicationLogSendDigest
      Customer:      VisualVault
      Purpose:       Purpose of this script is acquire list of communication logs that need to be sent as a digest and send them to recipients together.
@@ -27,7 +27,7 @@ module.exports.main = function (vvClient, response, token) {
                     Step4:  Measure results and communicate completion.
            
      Date of Dev:   05/20/2019
-     Last Rev Date: 09/08/2019
+     Last Rev Date: 04/27/2020
 
      Revision Notes:
      05/20/2019 - Jason Hatch:  Initial creation of the business process. 
@@ -37,6 +37,7 @@ module.exports.main = function (vvClient, response, token) {
      09/06/2019 - Jonathan Mitchell: Update error email list to be a configurable group of users rather than hard-coded email addresses.
      09/08/2019 - Kendra Austin: QA of 9/6 work and troubleshooting bugs. Resolved issue with duplicate emails to same email address, 
                                  blank emails, and posting too many form revisions of the comm logs.
+     04/27/2020 - Kendra Austin: Update to async to ensure throttling mechanism is functional. 
      */
 
 
@@ -49,304 +50,299 @@ module.exports.main = function (vvClient, response, token) {
     var commLogQuery = 'Communication Send Digest';             //This is the name of the query that will be used to get digest emails.
     var subjectForDigest = 'Daily Digest Email';                //This is the subject of the digest email.
     var groupsToNotifyOfError = ['VaultAccess'];                //These are the groups to notify if an error occurs during this process.
-    
+
     var frequencyEmailSendinms = 5000;                          //This is the number of milleseconds delay between sending each email.
-    var timeZone = 'America/Chicago';                           //This is the timezone of the customer. 
+    var timeZone = 'America/New_York';                           //This is the timezone of the customer. 
+    /* Reference List of Moment Timezones: 
+    Pacific Time: America/Los_Angeles
+    Arizona Time: America/Phoenix
+    Central Time: America/Chicago
+    Eastern Time: America/New_York
+    */
     //END OF CONFIGURABLE VALUES
 
     //Other globally used variables.
     var errorLog = [];   //Array for capturing error messages that may occur.
-    var commArray = [];  //Array of communication items.
     var recipientArray = [];   //Array of objects for all the recipients.
     var guidArray = [];  //Variable for list of GUIDS associated with the communication logs so they can be marked as sent.
 
-    //Only a holder function for the delay.
-    var delayFunction = function() {
-        var a = '';
-    }
+    try {
+        //This function takes a configurable number of milliseconds to complete and returns a promise
+        var waitFunction = function () {
+            return new Promise(function (resolve) {
+                setTimeout(function () {
+                    resolve('Waited');
+                }, frequencyEmailSendinms);
+            });
+        };
 
-    //Function to load the recipientArray
-    var LoadRecipientArray = function (communicationArray) {
-        //Create the recipient array.
-        communicationArray.forEach(function (item) {
-            //We will load an object into an array for each recipient.  The object will identify the recipient.
-            //It will also have an array of messages.  Each array will have an object of Subject and Body.
+        //Function to load the recipientArray
+        var LoadRecipientArray = function (communicationArray) {
+            //Load the recipient array.
+            communicationArray.forEach(function (item) {
+                //We will load an object into an array for each recipient.  The object will identify the recipient.
+                //It will also have an array of messages.  Each array will have an object of Subject and Body.
 
-            //Take the item being passed in and extract it into an array of recipients.
-            var recipientList = item['email Recipients'].split(",");
-            if (recipientArray.length == 0) {
-                //Load for the first time.  Go throug complete list of recipients.
-                recipientList.forEach(function (recipItem) {
-                    var recipObj = {};
-                    recipObj.recipient = recipItem.toLowerCase().trim();
-                    recipObj.messageArrays = [];
-                    recipientArray.push(recipObj);
-                });
-            }
-            else {
-                //Go through each recipient to see if they are in the recipientArray already.  If not, add to the array.
-                recipientList.forEach(function (recipItem) {
-                    var foundRecip = 'No';
-                    recipientArray.forEach(function (recipArrayItem) {
-                        if (recipItem.toLowerCase().trim() == recipArrayItem.recipient.toLowerCase().trim()) {
-                            foundRecip = 'Yes';
-                        }
-                    });
-
-                    if (foundRecip == 'No') {
+                //Take the item being passed in and extract it into an array of recipients.
+                var recipientList = item['email Recipients'].split(",");
+                if (recipientArray.length === 0) {
+                    //Load for the first time.  Go throug complete list of recipients.
+                    recipientList.forEach(function (recipItem) {
                         var recipObj = {};
                         recipObj.recipient = recipItem.toLowerCase().trim();
                         recipObj.messageArrays = [];
                         recipientArray.push(recipObj);
-                    }
-                });
-            }
-        });
-        return true;
-    }
+                    });
+                }
+                else {
+                    //Go through each recipient to see if they are in the recipientArray already.  If not, add to the array.
+                    recipientList.forEach(function (recipItem) {
+                        var foundRecip = 'No';
+                        recipientArray.forEach(function (recipArrayItem) {
+                            if (recipItem.toLowerCase().trim() === recipArrayItem.recipient.toLowerCase().trim()) {
+                                foundRecip = 'Yes';
+                            }
+                        });
 
-    //The following function will be used to load the digest message information into the RecipientArray
-    var LoadMessageData = function (communicationArray) {
-        communicationArray.forEach(function (commItem) {
-            //We will load an object into an array for each recipient.  The object will identify the recipient.
-            //It will also have an array of messages.  Each array will have an object of Subject and Body.
-
-            //Take the item being passed in and extract it into an array of recipients.
-            var recipientList = commItem['email Recipients'].split(",");
-
-            //Go through each recipient to see if they are in the recipientArray already.  If not, add to the array.
-            recipientList.forEach(function (recipItem) {
-                //Go through the array of recipients and their messages to add to the messageArray.
-                recipientArray.forEach(function (recipArrayItem) {
-                    //locate recipient.
-                    if (recipItem.toLowerCase().trim() == recipArrayItem.recipient.toLowerCase().trim()) {
-                        //recipient is found.  Look for the message and load it.
-                        if (recipArrayItem.messageArrays.length == 0) {
-                            var messageObj = {};
-                            messageObj.subject = commItem['subject'];
-                            messageObj.body = commItem['email Body'];
-                            messageObj.messageGUIDS = commItem['dhid'];
-                            recipArrayItem.messageArrays.push(messageObj);
+                        if (foundRecip === 'No') {
+                            var recipObj = {};
+                            recipObj.recipient = recipItem.toLowerCase().trim();
+                            recipObj.messageArrays = [];
+                            recipientArray.push(recipObj);
                         }
-                        else {
-                            //Go through each recipient to see if the message exits or not.  If not, add to the array.
-                            var messageFound = 'No';
-                            recipArrayItem.messageArrays.forEach(function (messageItem) {
-                                if (messageItem.subject.toLowerCase().trim() == commItem.subject.toLowerCase().trim()) {
-                                    messageFound = 'Yes';
-                                    //Message is found so add to the body and messageGUIDS of the message
-                                    messageItem.body = messageItem.body + "<br>" + commItem['email Body'];
-                                    messageItem.messageGUIDS = messageItem.messageGUIDS + ', ' + commItem['dhid'];
-                                }
-                            });
+                    });
+                }
+            });
+            return true;
+        };
 
-                            //Not found so push the information to the recipArrayItem
-                            if (messageFound == 'No') {
+        //The following function will be used to load the digest message information into the RecipientArray
+        var LoadMessageData = function (communicationArray) {
+            communicationArray.forEach(function (commItem) {
+                //We will load an object into an array for each recipient.  The object will identify the recipient.
+                //It will also have an array of messages.  Each array will have an object of Subject and Body.
+
+                //Take the item being passed in and extract it into an array of recipients.
+                var recipientList = commItem['email Recipients'].split(",");
+
+                //Go through each recipient to see if they are in the recipientArray already.  If not, add to the array.
+                recipientList.forEach(function (recipItem) {
+                    //Go through the array of recipients and their messages to add to the messageArray.
+                    recipientArray.forEach(function (recipArrayItem) {
+                        //locate recipient.
+                        if (recipItem.toLowerCase().trim() === recipArrayItem.recipient.toLowerCase().trim()) {
+                            //recipient is found.  Look for the message and load it.
+                            if (recipArrayItem.messageArrays.length === 0) {
                                 var messageObj = {};
                                 messageObj.subject = commItem['subject'];
                                 messageObj.body = commItem['email Body'];
                                 messageObj.messageGUIDS = commItem['dhid'];
                                 recipArrayItem.messageArrays.push(messageObj);
                             }
+                            else {
+                                //Go through each recipient to see if the message exits or not.  If not, add to the array.
+                                var messageFound = 'No';
+                                recipArrayItem.messageArrays.forEach(function (messageItem) {
+                                    if (messageItem.subject.toLowerCase().trim() === commItem.subject.toLowerCase().trim()) {
+                                        messageFound = 'Yes';
+                                        //Message is found so add to the body and messageGUIDS of the message
+                                        messageItem.body = messageItem.body + "<br>" + commItem['email Body'];
+                                        messageItem.messageGUIDS = messageItem.messageGUIDS + ', ' + commItem['dhid'];
+                                    }
+                                });
+
+                                //Not found so push the information to the recipArrayItem
+                                if (messageFound === 'No') {
+                                    var messageObj = {};
+                                    messageObj.subject = commItem['subject'];
+                                    messageObj.body = commItem['email Body'];
+                                    messageObj.messageGUIDS = commItem['dhid'];
+                                    recipArrayItem.messageArrays.push(messageObj);
+                                }
+                            }
                         }
-                    }
+                    });
+
+
                 });
-
-
             });
-        });
-        return true;
-    }
+            return true;
+        };
 
-    //The following function will get user email addresses from the groups identified to send any errors to. 
-    const getUserEmailsByGroups = (vvClient, groupArray) => {
-        return vvClient.scripts.runWebService('LibGroupGetGroupUserEmails', 
-            [
-                {
-                    name: 'groups',
-                    value: groupArray
-                }
-            ]
-        )
-        .then(function (userInfoResponse) {
-            if (userInfoResponse.meta.status === 200) {
-                if (userInfoResponse.data[0] == 'Success') 
-                {
-                    return userInfoResponse.data[2].map(entry => entry['emailAddress']).join();
+
+        //The following function will get user email addresses from the groups identified to send any errors to. 
+        const getUserEmailsByGroups = async function (vvClient, groupArray) {
+            try {
+                let userInfoResponse = await vvClient.scripts.runWebService('LibGroupGetGroupUserEmails',
+                    [
+                        {
+                            name: 'groups',
+                            value: groupArray
+                        }
+                    ]
+                );
+                if (userInfoResponse.meta.status === 200) {
+                    if (userInfoResponse.data[0] === 'Success') {
+                        return userInfoResponse.data[2].map(entry => entry['emailAddress']).join();
+                    }
+                    else {
+                        //Log errors so they aren't lost
+                        errorLog.forEach(function (log) {
+                            logger.info(log);
+                        });
+
+                        //Then throw error
+                        throw new Error('The call to get notification emails returned with an error.');
+                    }
                 }
                 else {
                     //Log errors so they aren't lost
                     errorLog.forEach(function (log) {
                         logger.info(log);
                     });
-    
+
                     //Then throw error
-                    throw new Error('The call to get notification emails returned with an error.');
+                    throw new Error(userInfoResponse.meta.statusMsg);
                 }
             }
-            else {
-                //Log errors so they aren't lost
-                errorLog.forEach(function (log) {
-                    logger.info(log);
-                });
-    
-                //Then throw error
-                throw new Error(userInfoResponse.meta.statusMsg);
+            catch (error) {
+                logger.info(error);
+                return false;
             }
-        });
-    }
+        };
 
-    //Parameter for the query.  Does not need a filter at this time.    Query looks like the following:
-    // SELECT * 
-    // FROM [Communications Log]
-    // WHERE [Communication Type] = 'Email' AND 
-    //             [Email Type] = 'Digest' AND 
-    //             [Communication Sent] <> 'Yes' AND
-    //             [Scheduled Date] < GetDate() AND
-    //             [Approved] = 'Yes'
-    // ORDER BY [Email Recipients], [Subject]
+        /*
+                START OF MAIN CODE
+        */
 
-    var queryparams = {};
-    queryparams = { filter: "" };
+        //Parameter for the query.  Does not need a filter at this time.    Query looks like the following:
+        // SELECT * 
+        // FROM [Communications Log]
+        // WHERE [Communication Type] = 'Email' AND 
+        //             [Email Type] = 'Digest' AND 
+        //             [Communication Sent] <> 'Yes' AND
+        //             [Scheduled Date] < GetDate() AND
+        //             [Approved] = 'Yes'
+        // ORDER BY [Email Recipients], [Subject]
 
-    //Run query to get the communication log items.
-    vvClient.customQuery.getCustomQueryResultsByName(commLogQuery, queryparams).then(function (promise) {
-        var responseItem = JSON.parse(promise);
-        if (responseItem.data.length > 0) {
-            //Load the items into the commarray for processing.
-            responseItem.data.forEach(function (item) {
-                commArray.push(item);
-            });
+        var queryparams = {};
+        queryparams = { filter: "" };
 
-            return LoadRecipientArray(commArray);
-        }
-        else {
+        //Run query to get the communication log items.
+        let queryResponse = await vvClient.customQuery.getCustomQueryResultsByName(commLogQuery, queryparams);
+        var responseData = JSON.parse(queryResponse);
+        if (responseData.data.length === 0) {
             throw new Error('No communication log records found.');
         }
-    })
-    .then(function (loadRecipResp) {
-        //Calling LoadMessageData to load the messages for each recipient.
-        if (loadRecipResp == true) {
-            return LoadMessageData(commArray);
+
+        //Put the array of communication logs into an array.
+        let commArray = responseData.data;
+
+        //Load the recipients into the recipient array. 
+        let recipientsLoaded = LoadRecipientArray(commArray);
+        if (!recipientsLoaded) {
+            throw new Error('Unable to load the array of recipients.');
         }
-        else {
-            throw new Error('Loading recipients returned a false.');
+
+        //Load the messages into the recipient array. 
+        let messagesLoaded = LoadMessageData(commArray);
+        if (!recipientsLoaded) {
+            throw new Error('Unable to load messages into the array of recipients.');
         }
-    })
-    .then(function (loadMessageResp) {
-        if (loadMessageResp == true) {
-            //Returned successful, continue.
-        }
-        else {
-            throw new Error('Issue occurred while loading the message bodies.')
-        }
-    })
-    .then(function () {
-        var processCommLog = Q.resolve();
+
         //Send each item
-        recipientArray.forEach(function (item) {
-            processCommLog = processCommLog.then(function () {
+        let numberToSend = recipientArray.length;
+        for (var i = 0; i < numberToSend; i++) {
+            var item = recipientArray[i];
 
-                //Load the email object.
-                var emailObj = {};
-                emailObj.recipients = item['recipient'];
-                //emailObj.ccrecipients = item['cc'];
-                emailObj.subject = subjectForDigest;
-                emailObj.body = '';
+            //Load the email object.
+            var emailObj = {};
+            emailObj.recipients = item['recipient'];
+            //emailObj.ccrecipients = item['cc'];
+            emailObj.subject = subjectForDigest;
+            emailObj.body = '';
 
-                //Load each fo the messages into the body.  Subject is used as section header.
-                item.messageArrays.forEach(function (messageItem) {
-                    emailObj.body += "<b>SUBJECT SECTION: " + messageItem.subject + '</b><br><br>';
-                    emailObj.body += messageItem.body + '<br><br><br>'
+            //Load each of the messages into the body.  Subject is used as section header.
+            item.messageArrays.forEach(function (messageItem) {
+                emailObj.body += "<b>SUBJECT SECTION: " + messageItem.subject + '</b><br><br>';
+                emailObj.body += messageItem.body + '<br><br><br>';
 
-                    //Load the GUIDS into an array so each form can be updated that it has been sent to the recipient.
-                    var splitGUID = messageItem.messageGUIDS.split(', ');
-                    splitGUID.forEach(function (guidItem) {
-                        //Assume not going to find this guid in the array
-                        var guidFound = false;
+                //Load the GUIDS into an array so each form can be updated that it has been sent to the recipient.
+                var splitGUID = messageItem.messageGUIDS.split(', ');
+                splitGUID.forEach(function (guidItem) {
+                    //Assume not going to find this guid in the array
+                    var guidFound = false;
 
-                        //Go through the existing list of GUIDs handled to see if it's there already
-                        guidArray.forEach(function(existingGuid) {
-                            if (guidItem == existingGuid) {
-                                guidFound = true;
-                            }
-                        });
-
-                        //If it wasn't there already, add it. 
-                        if (!guidFound) {
-                            guidArray.push(guidItem);
+                    //Go through the existing list of GUIDs handled to see if it's there already
+                    guidArray.forEach(function (existingGuid) {
+                        if (guidItem === existingGuid) {
+                            guidFound = true;
                         }
                     });
 
-                })
-
-                //Send email 
-                return vvClient.email.postEmails(null, emailObj)
-                .then(function (resp) {
-                    if (resp.meta['status'] === 201) {
-                        //Success, 
-                        //This is a throttle to slow down the sending mechanism.  Previously server keeps disconnecting.
-                        setTimeout(function () {delayFunction();}, frequencyEmailSendinms);
-                    }
-                    else {
-                        errorLog.push("Email could not be sent to " + emailObj.recipients + " with subject of " + emailObj.subject);
+                    //If it wasn't there already, add it. 
+                    if (!guidFound) {
+                        guidArray.push(guidItem);
                     }
                 });
+
             });
-        });
-        return processCommLog;
-    })
-    .then(function() {
-        //nNow update the form that it was sent. Need to process each form/guid that is present. 
-        var processCommUpdate = Q.resolve();
 
-        guidArray.forEach(function (guidItem) {
-            processCommUpdate = processCommUpdate.then(function () {
-                //Setup time in Eastern time.
-                var sendDate = momentTz().tz(timeZone).format('L');
-                var sendTime = momentTz().tz(timeZone).format('LT');
-                var localScheduledTime = sendDate + " " + sendTime;
+            //Send email 
+            let emailResp = await vvClient.email.postEmails(null, emailObj);
+            if (emailResp.meta.status !== 201) {
+                errorLog.push("Email could not be sent to " + emailObj.recipients + " with subject of " + emailObj.subject);
+            }
 
-                var updateObj = {};
-                updateObj['Communication Date'] = localScheduledTime;   //Set time to right now, in the customer's time zone.
-                updateObj['Communication Sent'] = 'Yes'
+            //Wait the configurable number of milliseconds. 
+            let waitingPeriod = await waitFunction();
+            if (waitingPeriod !== 'Waited') {
+                errorLog.push('The waiting period did not behave as expected.');
+            }
+        }
 
-                return vvClient.forms.postFormRevision(null, updateObj, commLogTemplateID, guidItem).then(function (updateResp) {
-                    if (updateResp.meta.status === 201) {
-                        //Update successful
-                        logger.info('Communication Log ' + guidItem + ' updated successfully; marked as sent.');
-                    }
-                    else {
-                        errorLog.push('Error encountered when updating Comm Log form id ' + guidItem);
-                    }
-                })
-            });
-        });
-        return processCommUpdate;
-    })
-    .then(async function () {
+        //Now update the form that it was sent. Need to process each form/guid that is present. 
+        var numberFormsToUpdate = guidArray.length;
+        for (var j = 0; j < numberFormsToUpdate; j++) {
+            var guidItem = guidArray[j];
+
+            //Load the update object. Include a local timestamp. 
+            var updateObj = {};
+            var sendDate = momentTz().tz(timeZone).format('L');
+            var sendTime = momentTz().tz(timeZone).format('LT');
+            var localScheduledTime = sendDate + " " + sendTime;
+            updateObj['Communication Date'] = localScheduledTime;   //Set time to right now, in the customer's time zone.
+            updateObj['Communication Sent'] = 'Yes';
+
+            let updateResp = await vvClient.forms.postFormRevision(null, updateObj, commLogTemplateID, guidItem);
+            if (updateResp.meta.status !== 201) {
+                errorLog.push('Error encountered when updating Comm Log form id ' + guidItem);
+            }
+        }
+
         // For testing, force an error into array to trigger getUsersToNotifyOnError lookup
         //errorLog.push('Example error for testing');
-
         if (errorLog.length > 0) {
-            var emailObj = {};
-            emailObj.recipients = await getUserEmailsByGroups(vvClient, groupsToNotifyOfError);
-            emailObj.subject = 'Error Occurred with Digest Email';
-            emailObj.body = 'An error occurred when when attempting to send digest emails.  Errors were as follows: <br><br>';
-            errorLog.forEach(function(error) {
-                emailObj.body += error + '<br>';
-            });
-            return vvClient.email.postEmails(null, emailObj).then(function (resp) {
-                if (resp.meta['status'] === 201) {
-                    //Email sent
-                }
-                else {
+            //Get the group of users who should get the error log. 
+            var errorLogRecipients = await getUserEmailsByGroups(vvClient, groupsToNotifyOfError);
+
+            //If recipients were returned, send the error log email to them
+            if (errorLogRecipients) {
+                var errorEmailObj = {};
+                errorEmailObj.recipients = errorLogRecipients;
+                errorEmailObj.subject = 'Error Occurred with Digest Email';
+                errorEmailObj.body = 'An error occurred when when attempting to send digest emails.  Errors were as follows: <br><br>';
+                errorLog.forEach(function (error) {
+                    errorEmailObj.body += error + '<br>';
+                });
+                let errorEmailResp = await vvClient.email.postEmails(null, errorEmailObj);
+                if (errorEmailResp.meta.status !== 201) {
                     logger.info('The error email for CommunicationLogSendDigest was not sent on ' + new Date());
                 }
-            });
+            }
         }
-    })
-    .then(function () {
+
+        //Last Thing: Measure results and return responses.
         if (errorLog.length > 0) {
             //Errors captured
             // response.json('200', 'Error encountered during processing.  Please contact support to troubleshoot the errors that are occurring.' );
@@ -356,9 +352,8 @@ module.exports.main = function (vvClient, response, token) {
             // response.json('200', 'Emails processed successfully');
             return vvClient.scheduledProcess.postCompletion(token, 'complete', true, 'Emails processed successfully');
         }
-
-    }).catch(function (err) {
-        // response.json('200', 'Error encountered during processing.  Error was ' + err );
+    }
+    catch (err) {
         return vvClient.scheduledProcess.postCompletion(token, 'complete', true, 'Error encountered during processing.  Error was ' + err);
-    });
-}
+    }
+};
