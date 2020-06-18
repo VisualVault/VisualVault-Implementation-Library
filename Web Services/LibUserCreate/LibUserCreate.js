@@ -87,7 +87,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
             a. If minor errors occurred, return ‘Minor Error’ with details.
             b. If no errors, return ‘Success’
      Date of Dev:   12/4/2018
-     Last Rev Date: 01/16/2020
+     Last Rev Date: 06/17/2020
      Revision Notes:
      12/04/2018 - Alex Rhee: Initial creation of the business process.
      12/18/2018 - Alex Rhee: Code reorganized and rewritten to follow promise chaining examples. Still missing folder provisioning.
@@ -98,13 +98,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
      12/19/2019 - Kendra Austin: Script rewrite. Add hyphen (-) to user ID chars, add configuration to use or not use Comm Log, send only one custom email.
      01/08/2020 - Kendra Austin: Switch out getUsers to a custom query. Allows disabled users to be returned so better error handling.
      01/16/2020 - Kendra Austin: Add Other Fields to parameters for Comm Log creation. Make comments about folder security.
+     06/17/2020 - Kendra Austin: Do not use $ in passwords. $& is a .replace() method shortcut. 
      */
 
     logger.info('Start of the process UserCreate at ' + Date());
 
     //---------------CONFIG OPTIONS---------------
-    //Possible characters for password
-    var passwordChars = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!@#$%^&*()_+";
+    //Possible characters for password. Do not include $.
+    var passwordChars = "ABCDEFGHJKLMNOPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz0123456789!@#%^&*()_+";
 
     //Allowed characters for User ID
     var userNameChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.@+-";
