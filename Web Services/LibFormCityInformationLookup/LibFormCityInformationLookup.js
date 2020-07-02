@@ -28,6 +28,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      05/14/2019 - Jason Hatch: Script created
      08/20/2019 - Jason Hatch: Updated to capture error if zipcode not found.
      12/10/2019 - Kendra Austin: Make key a configurable variable for adding this script to Implementation Library. 
+     07/02/2020 - Maxwell Rehbein: Return obj from service is now in JSON format. Changed to work with new format.
      */
 
     logger.info('Start of the process LibFormCityInformationLookup at ' + Date());
@@ -61,7 +62,8 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 response.json(200, outputArray);
             }
             else {
-                var cityResult = JSON.parse(body.trim());
+                //var cityResult = JSON.parse(body.trim()); Return item is now in JSON format, not needed.
+                var cityResult = body.item;
                 if (cityResult.Error == 'undefined') {
                     outputArray[0] = 'Error';
                     outputArray[1] = cityResult.Error;
@@ -69,9 +71,9 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 }
                 else if (cityResult.item != 'undefined') {
                     var cityObj = {};
-                    cityObj.City = cityResult.item.PreferredLastLineName;
-                    cityObj.State = cityResult.item.State;
-                    cityObj.County = cityResult.item.CountyName;
+                    cityObj.City = cityResult.PreferredLastLineName;
+                    cityObj.State = cityResult.State;
+                    cityObj.County = cityResult.CountyName;
 
                     outputArray[0] = 'Success';
                     outputArray[1] = 'Information acquired';
