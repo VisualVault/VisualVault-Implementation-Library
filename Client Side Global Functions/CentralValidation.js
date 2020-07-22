@@ -6,15 +6,16 @@
                     Passed Parameters:  PassedValue, ValidationType
                     PassedValue - this is a string of the value that is being checked.
                     ValidationType - this is the type of validation that will occur.  Value values are as follows:
-                          Phone, Email, URL, Blank, Zip, DDSelect, SSN, EIN, NPI, Currency, Percent, NumberOnly
+                          Phone, Email, URL, Blank, Zip, DDSelect, SSN, EIN, NPI, Currency, Percent, NumberOnly, MedicaidRecipientID, MedicaidProviderID
                     These work in conjunction with the SetupReg file where all the regular expressions are stored.
     Return Value:  The following represents the value being returned from this function:
                     True if required number are selected, false if not.        
     Date of Dev:   
-    Last Rev Date: 04/15/2019
+    Last Rev Date: 07/22/2020
     Revision Notes:
     06/01/2011 - Jason Hatch: Initial creation of the business process. 
     04/15/2019 - Maxwell Rehbein : NumberOnly created. 
+	07/22/2020 - Kendra Austin: Two medicaid ID types created.
 */
 
 
@@ -66,6 +67,12 @@ switch (ValidationType) {
 
     case 'NumberOnly':
         return VV.Form.Global.NumberOnly.test(PassedControlValue);
+
+	case 'MedicaidRecipientID':
+		return VV.Form.Global.MedicaidIDRecipient.test(PassedControlValue); 
+
+	case 'MedicaidProviderID':
+		return VV.Form.Global.MedicaidIDProvider.test(PassedControlValue); 
 
     default:
         alert('The right validation was not passed to the CentralValidation Function: ' + ValidationType);
