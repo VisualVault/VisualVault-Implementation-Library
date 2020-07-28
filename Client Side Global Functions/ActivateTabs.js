@@ -1,11 +1,8 @@
 /*
     Script Name:   ActivateTabs
     Customer:      VisualVault
-    Purpose:       This function takes in an array of tab button control names. It ensures they are always clickable, even in read-only mode.
-    Parameters:    The following represent variables passed into the function:  
-
-                   tabs - Array of tab button names
-
+    Purpose:       This function ensures buttons in containers with tab or menu style are always clickable, even in read-only mode.
+    Parameters:    None
     Return Value:  None 
     Date of Dev:   07/28/2020
     Last Rev Date: 
@@ -14,7 +11,15 @@
     07/28/2020 - Kendra Austin: Initial creation of the business process. 
 */
 
-//Iterate through each tab button and make it active even in read only mode: 
-for (var i = 0; i < tabs.length; i++) {
-	$("[vvfieldname='" + tabs[i] + "']").removeAttr('disabled').removeAttr('readonly');
-};
+var styleNames = ['.styleMenu', '.styleTabButtons'];
+
+for (var x = 0; x < styleNames.length; x++) {
+	//Get the list of controls in this container. 
+	var tabList = $(styleNames[x]).children();
+
+	//Iterate through each tab button in this style and make it active even in read only mode: 
+	for (var i = 0; i < tabList.length; i++) {
+		var tabName = $(tabList[i]).attr('vvfieldnamewrapper');
+		$("[vvfieldname='" + tabName + "']").removeAttr('disabled').removeAttr('readonly');
+	}
+}
