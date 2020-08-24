@@ -4,6 +4,7 @@
     Purpose:       This function ensures buttons in containers with tab or menu style are always clickable, even in read-only mode.
 				   It also hides the VV default close button, then finds all buttons labeled "Close" 
 				   and formats them with red color and clickable even in read-only mode.
+		USE: Put this function in the onLoad and EventsEnd events of the template.
 
     Parameters:    None
     Return Value:  None 
