@@ -2,6 +2,7 @@
 // MUST HAVE LIBFORMCREATECOMMUNICATIONLOG uploaded to the outside processes.
 
 var logger = require('../log');
+var moment = require('moment');
 var Q = require('q');
 
 module.exports.getCredentials = function () {
@@ -42,6 +43,9 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     -RELATETORECORD (Array of strings representing form IDs, Optional) The RelateToRecord passed in must match the example below.
                                     This will relate the calling form to the communication log that will be generate.
                             EX:             {name:'RELATETORECORD', value:relateToRecord}       //The value for this example is for multiple records stored in an array.
+                    -SendDateTime (string, optional) If a specifc time needs to be set when the email should occur, then this should be passed from the calling script as a moment().toISOString() with any date/time manipulations needed.
+                                            This script will validate the date passed in.  If nothing is passed in, then the current date and time will be used.
+
      Pseudocode:    1.  Accept data from calling webscript.
                     2.  Validate data recieved from calling webscript.
                     3.  Query to find the correct email form template.
@@ -59,7 +63,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     1 - Message
                     2 - Any unreplaced tokens in the generated email notification.
      Date of Dev:   10/16/2019
-     Last Rev Date: 01/29/2020
+     Last Rev Date: 01/30/2020
      Revision Notes:
      10/16/2019 - Michael Rainey: Initial Creation
      12/10/2019 - Kendra Austin: QA.
@@ -67,12 +71,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
      01/24/2020 - Michael Rainey - Adjusted token replacement to accept an array instead of an object.
                                  - added passed in email address validation. added comma checking.
      01/29/2020 - Kendra Austin: QA Updates. 
+     01/30/2020 - Kendra Austin: Minor updates based on Michael's feedback. 
+     05/30/2020 - Michael Rainey: Add the ability to pass in send date/time for the communication log.
      */
 
     logger.info('Start of the process LibEmailGenerateAndCreateCommunicationLog at ' + Date());
 
     //Configuration Variables
-    var emailNotifTemplateName = 'Email Notification Template';                     //The name of the email notification lookup template. 
+    var emailNotifTemplateName = 'Email Notification Lookup';                     //The name of the email notification lookup template. 
     var sendWithIncompleteTokens = 'Yes';                                           //Set to 'Yes' if you want to send emails with unreplaced tokens. Otherwise set to 'No'.
 
     var sendToDDOne = 'Send to a defined list of email addresses';                  //Three options in the send to drop-down field on the emailNotifTemplateName template.
@@ -98,6 +104,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
     var CCadditionaEmailAddress = ffCollection.getFormFieldByName('Email AddressCC');
     var otherFields = ffCollection.getFormFieldByName('OTHERFIELDSTOUPDATE');
     var relateToRecord = ffCollection.getFormFieldByName('RELATETORECORD');
+    var sendDateTime = ffCollection.getFormFieldByName('SendDateTime');
     //End accepted variables from calling script.
 
     //Initialization of the return object
@@ -173,6 +180,16 @@ module.exports.main = function (ffCollection, vvClient, response) {
             relateToRecord = [];
         } else {
             relateToRecord = relateToRecord.value;
+        }
+
+        //SendDateTime parameter is not required. If not passed in, set to the current date and time.
+        if (!sendDateTime || !sendDateTime.value) {
+            sendDateTime = moment().toISOString();
+        } else {
+            sendDateTime = sendDateTime.value;
+            if (!moment(sendDateTime).isValid()){
+                errors.push("The send date and time are not in the correct format. Please pass in a moment().toISOString().")
+            }
         }
 
         //Email Address parameter is not required. If not passed in, set to empty string.
@@ -313,7 +330,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                         { name: 'SUBJECT', value: subject },
                         { name: 'BODY', value: body },
                         { name: 'RELATETORECORD', value: relateToRecord },
-                        { name: 'SCHEDULEDSENDDATETIME', value: new Date().toISOString() },
+                        { name: 'SCHEDULEDSENDDATETIME', value: sendDateTime },
                         { name: 'APPROVEDTOSEND', value: 'Yes' },
                         { name: 'OTHERFIELDSTOUPDATE', value: otherFields }
                     ];
