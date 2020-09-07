@@ -63,7 +63,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     1 - Message
                     2 - Any unreplaced tokens in the generated email notification.
      Date of Dev:   10/16/2019
-     Last Rev Date: 01/30/2020
+     Last Rev Date: 09/07/2020
      Revision Notes:
      10/16/2019 - Michael Rainey: Initial Creation
      12/10/2019 - Kendra Austin: QA.
@@ -73,6 +73,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
      01/29/2020 - Kendra Austin: QA Updates. 
      01/30/2020 - Kendra Austin: Minor updates based on Michael's feedback. 
      05/30/2020 - Michael Rainey: Add the ability to pass in send date/time for the communication log.
+     09/07/2020 - Kendra Austin: Add ability to include tokens in email subject lines.
      */
 
     logger.info('Start of the process LibEmailGenerateAndCreateCommunicationLog at ' + Date());
@@ -235,12 +236,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
                         var tokenName = tokenItem.name;
                         var tokenData = tokenItem.value;
                         body = body.split(tokenName).join(tokenData);
+                        subject = subject.split(tokenName).join(tokenData);
                     });
                     //End replacing tokens in body.
 
                     //Start search for unreplaced tokens.
                     var badTokenList = [];
                     var tokenCheck = body.split(/(\[(.*?)\])/);
+                    tokenCheck.push.apply(tokenCheck, subject.split(/(\[(.*?)\])/));
                     tokenCheck.forEach(function (unreplacedToken) {
                         if (unreplacedToken.charAt(0) == '[' && unreplacedToken.slice(-1) == ']') {
                             badTokenList.push(unreplacedToken);
