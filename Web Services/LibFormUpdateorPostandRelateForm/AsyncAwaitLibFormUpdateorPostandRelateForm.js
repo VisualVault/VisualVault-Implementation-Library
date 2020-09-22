@@ -27,7 +27,7 @@ module.exports.main = async function (ffCollection, vvClient, response) {
                                  existing form.
                         TARGETTEMPLATENAME - (string, Required) The template name of the target form to be updated or created.
                         TARGETFORMID - (string, Conditionally required) If ACTION = 'Update,' the revision ID (GUID) of the target form. Not required if ACTION = 'Post'
-                        QUERY - (object, Conditionally required) If ACTION = 'Update,' and TARGETFORMID is not provided, use the query to find multiple forms to update
+                        QUERY - (string, Conditionally required) If ACTION = 'Update,' and TARGETFORMID is not provided, use the query to find multiple forms to update
                                 and relate each to parent form. If ACTION = 'Update,' either TARGETFORMID or QUERY is required, but not both.
                         UPDATEFIELDS - (object, Required) An object of target field names to update with specified values. Accepts one object only.
       Process PseudoCode:   1. Validate the passed in parameters and extract values. Aggregate error messages into one string so that user can be 
