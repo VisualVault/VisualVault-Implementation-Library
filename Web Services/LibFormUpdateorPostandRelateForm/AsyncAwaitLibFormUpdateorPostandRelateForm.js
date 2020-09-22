@@ -3,13 +3,14 @@ var logger = require('../log');
 
 
 module.exports.getCredentials = function () {
-    var options = {};
-    options.customerAlias = "DevelopmentLibraryTe";
-    options.databaseAlias = "Default";
-    options.userId = "DevLibraryTesting.api";
-    options.password = "&n>/sLcX]9qB";
-    options.clientId = "cec3d7de-7d53-4f9f-b49a-39c8c8f04a14";
-    options.clientSecret = "QdtJXYbqpbTlgtEvRFFQ3i3Aup3bg5oe4Chq3EhWKQY=";
+    let options = {
+        customerAlias: "",
+        databaseAlias: "",
+        userId: "",
+        password: "",
+        clientId: "",
+        clientSecret: ""
+    };
     return options;
 };
 
@@ -58,13 +59,14 @@ module.exports.main = async function (ffCollection, vvClient, response) {
                      1 - Message
                      2 - On Success, returns the form data object(s) of the posted form or updated form(s)
       Date of Dev:   11/19/2018
-      Last Rev Date: 02/18/2020
+      Last Rev Date: 09/22/2020
  
       Revision Notes:
       11/19/2018: Kendra Austin - Initial creation of the business process.
       01/16/2018: Kendra Austin - for relateForms calls, 404 means relation already exists. Allow script to continue past this.
       12/10/2019: Kendra Austin - Update header info.
       02/18/2020: Kendra Austin - Update to async/await pattern. 
+      09/22/2020: Kendra Austin - Bug fix. getForms call takes an object, not a string.
         
       */
 
@@ -225,7 +227,10 @@ module.exports.main = async function (ffCollection, vvClient, response) {
         //If a query is being used to find and relate multiple forms, first run getForms to return a number of forms and the form data set. 
         if (actionRequested == 'update' && updateByQuery == true) {
             //First thing to do is get forms based on the query and measure the results
-            let formResponse = await vvClient.forms.getForms(childFormQuery, targetTemplateName);
+            var formQuery = {};
+            formQuery.q = childFormQuery;
+
+            let formResponse = await vvClient.forms.getForms(formQuery, targetTemplateName);
             //measure results
             var formResp = JSON.parse(formResponse);
             if (formResp.meta.status === 200) {
