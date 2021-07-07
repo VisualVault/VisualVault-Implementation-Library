@@ -1,4 +1,3 @@
-var vvEntities = require("../VVRestApi");
 var logger = require('../log');
 
 module.exports.getCredentials = function () {
@@ -12,103 +11,126 @@ module.exports.getCredentials = function () {
     return options;
 };
 
-module.exports.main = function (ffCollection, vvClient, response) {
+module.exports.main = async function (ffCollection, vvClient, response) {
     /*Script Name:   LibSiteEmailLookup
-     Customer:      VisualVault Library Function
-     Purpose:       Get a list User IDs, First Name, Last Name and Email addresses for all users who are in a VisualVault Location.
-                    Commonly used to get list of all email addresses for a provider.
-     Parameters:    The following represent variables passed into the function:
-                    Site ID = (string, Required) the id of the service provider used to lookup the VisualVault Location.
+   Customer:      VisualVault Library Function
+   Purpose:       Get a list User IDs, First Name, Last Name and Email addresses for all users who are in a VisualVault Location.
+                  Commonly used to get list of all email addresses for a provider.
+   Parameters:    The following represent variables passed into the function:
+                  Site ID = (string, Required) the id of the service provider used to lookup the VisualVault Location.
 
-     Process PseudoCode:
-                    1. Get the Site for the Site ID passed in.
-                    2. Get list of users for that site.  Not discriminating between enabled or disabled users.
-                    3. Load users into an object and return to the calling function.
+   Process PseudoCode:
+                  1. Get the Site for the Site ID passed in.
+                  2. Get list of users for that site.  Not discriminating between enabled or disabled users.
+                  3. Load users into an object and return to the calling function.
 
-     Return Array:  The following represents the array of information returned to the calling function. This is a standardized response. Any item in the array at points 2 or above can be used to return multiple items of information.
-                    0 - Status: Success, Failure
-		            1 - Message
-                    2 - Array of User Objects
+   Return Array:  The following represents the array of information returned to the calling function. This is a standardized response. Any item in the array at points 2 or above can be used to return multiple items of information.
+                  0 - Status: Success, Failure
+                  1 - Message
+                  2 - Array of User Objects
 
-     Date of Dev:   02/16/2018
-     Last Rev Date: 03/09/2018
-     Revision Notes:
-     02/16/2018 - Jason Hatch: Initial creation of the business process.
-     03/09/2018 - Jason Hatch: Added mechanism to get the usid from the users.
-     */
+   Date of Dev:   02/16/2018
+   Last Rev Date:  07/06/2021
+   Revision Notes:
+   02/16/2018 - Jason Hatch: Initial creation of the business process.
+   03/09/2018 - Jason Hatch: Added mechanism to get the usid from the users.
+   07/06/2021 - Emanuel Jofré: Promises transpiled to async/await.
+   */
 
+    // Logs the execution start time of the script
     logger.info('Start of the process LibSiteEmailLookup at ' + Date());
 
-    var outputCollection = [];
+    // Initialization of the return object
+    let returnObj = [];
 
-    var siteID = ffCollection.getFormFieldByName('Site ID');
-    var SiteInfo = '';
+    /********************
+     * Helper Functions *
+     ********************/
 
-    var sitedata = {};
-    sitedata.q = "name eq '" + siteID.value + "'";
-    sitedata.fields = 'id,name';
+    async function getSites(siteID) {
+        let site = {};
+        // Query
+        site.q = `name eq '${siteID}'`;
+        // Field names to return
+        site.fields = 'id, name';
+        // Gets site
+        const resp = await vvClient.sites.getSites(site)
 
-    vvClient.sites.getSites(sitedata).then(function (siteResp) {
-        var siteData = JSON.parse(siteResp);
-        if (siteData.meta.status == '200' && siteData.data.length > 0) {
-            logger.info('Site found for ' + siteID.value);
-            SiteInfo = siteData.data[0].id;
-        }
-        else {
-            logger.info('Site Not found for ' + siteID.value);
-            outputCollection[0] = 'No Site';
-            outputCollection[1] = 'A site was not found where the user could be created.';
-            throw new Error();
-        }
+        return resp;
+    }
 
-        var userParams = {};
-        return vvClient.users.getUsers(userParams, SiteInfo);
-    }).then(function (userResp) {
-        var userRespData = JSON.parse(userResp);
-        if (userRespData.meta.status == '200' && userRespData.data.length > 0) {
-            var emailList = [];
-            for (var a = 0; a < userRespData.data.length; a++) {
-                var userObj = {};
-                userObj.userid = userRespData.data[a]['userid'];
-                userObj.firstname = userRespData.data[a]['firstName'];
-                userObj.lastname = userRespData.data[a]['lastName'];
-                userObj.email = userRespData.data[a]['emailAddress'];
-                userObj.enabled = userRespData.data[a]['enabled'];
-                userObj.siteid = userRespData.data[a]['siteId'];
-                userObj.usid = userRespData.data[a]['id']
-                emailList.push(userObj);
-            }
-            outputCollection[0] = 'Emails Found';
-            outputCollection[1] = 'List of Emails Found and Returned.';
-            outputCollection[2] = emailList;
-            return response.json(200, outputCollection);
-        }
-        else {
-            outputCollection[0] = 'No Email';
-            outputCollection[1] = 'No Emails found for this site.';
-            throw new Error();
-        }
+    async function getUsers(SiteInfo) {
+        let usersParams = {};
+        // Gets users
+        const resp = await vvClient.users.getUsers(usersParams, SiteInfo);
 
+        return resp;
+    }
 
-    }).catch(function (err) {
-        if (!outputCollection[0]) {
-            var errorMessage = '';
-            if (err.message) {
-                logger.info("Error: " + err.message);
-                errorMessage = "Error: " + err.message;
+    /*****************
+     * Main Function *
+     *****************/
+
+    try {
+        // Extract the passed in parameter
+        const siteID = ffCollection.getFormFieldByName('Site ID');
+
+        // Validates the passed in parameter
+        if (!siteID.value || siteID.value == ' ') {
+            returnObj[0] = 'No Site';
+            returnObj[1] = "A site was not found where the user could be created.";
+        } else {
+            // Gets site data
+            const sitesResp = await getSites(siteID.value, vvClient);
+
+            // Processes the response from getSites()
+            const site = JSON.parse(sitesResp);
+
+            if (site.meta.status === 200 && site.data.length > 0) {
+                logger.info('Site found for ' + siteID.value);
+                const siteInfo = site.data[0].id;
+
+                // Gets users
+                const usersResp = await getUsers(siteInfo, vvClient);
+
+                // Processes the response from getSites()
+                const users = JSON.parse(usersResp);
+
+                if (users.meta.status === 200 && users.data.length > 0) {
+                    let emailList = [];
+                    const usersData = users.data;
+
+                    usersData.forEach(user => {
+                        // Creates user object
+                        const usersObj = {
+                            email: user.emailAddress,
+                            enabled: user.enabled,
+                            firstname: user.firstName,
+                            lastname: user.lastName,
+                            siteid: user.siteId,
+                            userid: user.userid,
+                            usid: user.id
+                        };
+                        // Add the user to the email list
+                        emailList.push(usersObj);
+                    });
+                    returnObj[0] = 'Emails Found';
+                    returnObj[1] = 'List of Emails Found and Returned.';
+                    returnObj[2] = emailList;
+                } else {
+                    returnObj[0] = 'No Email';
+                    returnObj[1] = 'No Emails found for this site.';
+                }
             } else {
-                logger.info("Error: " + err);
-                errorMessage = "Error: " + err;
+                logger.info(`Site '${siteID.value}' not found or has no users.`);
+                returnObj[0] = 'No Site';
+                returnObj[1] = "A site was not found where the user could be created.";
             }
-            outputCollection[0] = 'Error';
-            outputCollection[1] = errorMessage;
-            return response.json(200, outputCollection);
         }
-        else {
-            return response.json(200, outputCollection);
-        }
+    } catch (error) {
+        returnObj[0] = "Error";
+        returnObj[1] = error.message ? error.message : error;
+    }
 
-
-    });
-
-}   
+    return response.json(200, returnObj);
+}
