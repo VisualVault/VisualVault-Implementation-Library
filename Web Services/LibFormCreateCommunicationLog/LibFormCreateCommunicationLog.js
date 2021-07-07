@@ -1,5 +1,4 @@
 var logger = require('../log');
-var Q = require('q');
 var moment = require('moment');
 var momentTz = require('moment-timezone');
 
@@ -15,7 +14,7 @@ module.exports.getCredentials = function () {
 };
 
 
-module.exports.main = function (ffCollection, vvClient, response) {
+module.exports.main = async function (ffCollection, vvClient, response) {
 
     /*Script Name:   LibFormCreateCommunicationLog
       Customer:      For Global Use
@@ -31,7 +30,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
                             SCHEDULEDSENDDATETIME – (date, Required) This is the date and time when communication should be sent.  Date format should be an ISO format: new Date().toISOString()
                             APPROVEDTOSEND – (string, Required) This is an indicator if the communication is approved to be sent immediately or not.  Value should be Yes as approved or No as not approved.
                             OTHERFIELDSTOUPDATE - (object, Required) This is an object of field names with field values to update on the Communications Log.
-
                             Example format:
                             let communicationLogObj = [
                                 { name: 'COMMUNICATIONTYPE', value: 'Email' },
@@ -50,7 +48,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
                                     }
                                 }
                             ];
-
       Process PseudoCode:   1.  Validate that the information passed is correct and present.
                             2.  Prepare the postform process.
                             3.  Post the form to VisualVault
@@ -63,14 +60,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
                      2 - Created Communication Log Form ID
                      3 - Created Communication Log Revision ID
       Date of Dev:   05/17/2019
-      Last Rev Date: 12/10/2019
+      Last Rev Date: 06/25/2021
  
       Revision Notes:
       05/17/2019: Jason Hatch - Initial creation of the business process.
       05/29/2019: Kendra Austin - Update to accept an array of Form IDs in RELATETORECORD and send back comm log form ID and revision ID.
       08/05/2019: Kendra Austin - Convert scheduled send date to Eastern time before posting the communication log form.
       12/10/2019: Kendra Austin - Updated header info and comments for inclusion in Implementation Library. 
-        
+      06/25/2021: Agustina Mannise - Update the .then promises chain for async/await.  
       */
 
     logger.info('Start of the process LibFormCreateCommunicationLog at ' + Date());
@@ -112,10 +109,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
     var numForms = 0;
     var successes = 0;
 
-
-    var result = Q.resolve();
-
-    return result.then(function () {
+    try {
         //Extract the values of the passed in fields. for validation checking.
 
         communicationType = ffCollection.getFormFieldByName('COMMUNICATIONTYPE');
@@ -128,8 +122,6 @@ module.exports.main = function (ffCollection, vvClient, response) {
         scheduledSendDateTime = ffCollection.getFormFieldByName('SCHEDULEDSENDDATETIME').value;
         approvedToSend = ffCollection.getFormFieldByName('APPROVEDTOSEND');
         otherFields = ffCollection.getFormFieldByName('OTHERFIELDSTOUPDATE').value;
-
-
 
         //Validate passed in fields
         //COMMUNICATIONTYPE is a required parameter
@@ -230,88 +222,91 @@ module.exports.main = function (ffCollection, vvClient, response) {
             inputErrors++;
             inputErrorsMessage += "The APPROVEDTOSEND parameter must have a value of 'Yes' or 'No'. Invalid value provided. <br>";
         }
-    })
-        .then(function () {
-            //If the number of errors is greater than zero at this point, then throw an error with the aggregated issues.
-            if (inputErrors > 0) {
-                throw new Error(inputErrorsMessage);
-            }
-        })
-        .then(function () {
-            //Post the communication log.
-            var targetFields = {};
-            targetFields['Communication Type'] = communicationType.value;
-            targetFields['Email Type'] = emailType.value;
-            targetFields['Email Recipients'] = recipients.value;
-            targetFields['CC'] = recipientscc.value;
-            targetFields['Subject'] = subject.value;
-            targetFields['Email Body'] = body.value;
-            targetFields['Scheduled Date'] = localScheduledTime;
-            targetFields['Approved'] = approvedToSend.value;
-            targetFields['Communication Sent'] = 'No';
 
-            //Load additional fields
-            for (var property1 in otherFields) {
-                targetFields[property1] = otherFields[property1];
-            }
 
-            return vvClient.forms.postForms(null, targetFields, communicationLogTemplateID).then(function (postResp) {
+        //If the number of errors is greater than zero at this point, then throw an error with the aggregated issues.
+        if (inputErrors > 0) {
+            throw new Error(inputErrorsMessage);
+        }
 
-                if (postResp.meta.status === 201 || postResp.meta.status === 200) {
-                    commLogRevisionId = postResp.data.revisionId;
-                    commLogFormId = postResp.data.instanceName;
-                }
-                else {
-                    throw new Error("Call to post new form returned with an error. The server returned a status of " + postResp.meta.status);
-                }
-            })
 
-        })
-        .then(function () {
-            //Relate the created communication log to each Form ID in the RELATETORECORD array. 
-            var relateProcessResult = Q.resolve();
+        //Post the communication log.
+        var targetFields = {};
+        targetFields['Communication Type'] = communicationType.value;
+        targetFields['Email Type'] = emailType.value;
+        targetFields['Email Recipients'] = recipients.value;
+        targetFields['CC'] = recipientscc.value;
+        targetFields['Subject'] = subject.value;
+        targetFields['Email Body'] = body.value;
+        targetFields['Scheduled Date'] = localScheduledTime;
+        targetFields['Approved'] = approvedToSend.value;
+        targetFields['Communication Sent'] = 'No';
 
-            relateToRecord.forEach(function (relatedForm) {
-                relateProcessResult = relateProcessResult.then(function () {
-                    return vvClient.forms.relateFormByDocId(commLogRevisionId, relatedForm).then(function (relateResp) {
-                        var relatedResp = JSON.parse(relateResp);
-                        if (relatedResp.meta.status === 200 || relatedResp.meta.status === 404) {
-                            successes++;
-                        }
-                        else {
-                            //logger.info("Call to relate forms returned with an error.");
-                            throw new Error("Call to relate forms returned with an error.");
-                        }
-                    });
-                });
-            });
+        //Load additional fields
+        for (var property1 in otherFields) {
+            targetFields[property1] = otherFields[property1];
+        }
 
-            return relateProcessResult;
-        })
-        .then(function () {
-            if (numForms == successes) {
-                returnObj[0] = 'Success';
-                returnObj[1] = "The request to create communication log completed successfully.";
-                returnObj[2] = commLogFormId;
-                returnObj[3] = commLogRevisionId;
+        let postResp = await vvClient.forms.postForms(null, targetFields, communicationLogTemplateID);
+
+        if (postResp.meta.status === 201 || postResp.meta.status === 200) {
+            commLogRevisionId = postResp.data.revisionId;
+            commLogFormId = postResp.data.instanceName;
+        }
+        else {
+            throw new Error("Call to post new form returned with an error. The server returned a status of " + postResp.meta.status);
+        }
+
+
+        //Relate the created communication log to each Form ID in the RELATETORECORD array. 
+        for (let relatedForm of relateToRecord) {
+            let relateResp = await vvClient.forms.relateFormByDocId(commLogRevisionId, relatedForm);
+            var relatedResp = JSON.parse(relateResp);
+            if (relatedResp.meta.status === 200 || relatedResp.meta.status === 404) {
+                successes++;
             }
             else {
-                throw new Error('The communication log was created successfully, but at least one form was not successfully related to it.');
+                //logger.info("Call to relate forms returned with an error.");
+                throw new Error("Call to relate forms returned with an error.");
             }
+        }
 
-            return response.json(200, returnObj);
-        })
-        .catch(function (err) {
-            logger.info(JSON.stringify(err));
 
-            returnObj[0] = 'Error';
-
-            if (err && err.message) {
-                returnObj[1] = err.message;
-            } else {
-                returnObj[1] = "An unhandled error has occurred. The message returned was: " + err;
+        /*relateToRecord.forEach(function (relatedForm) {
+            var relateResp = await vvClient.forms.relateFormByDocId(commLogRevisionId, relatedForm);
+            var relatedResp = JSON.parse(relateResp);
+            if (relatedResp.meta.status === 200 || relatedResp.meta.status === 404) {
+                successes++;
             }
+            else {
+                //logger.info("Call to relate forms returned with an error.");
+                throw new Error("Call to relate forms returned with an error.");
+            }
+        });*/
 
-            return response.json(returnObj);
-        })
+        if (numForms == successes) {
+            returnObj[0] = 'Success';
+            returnObj[1] = "The request to create communication log completed successfully.";
+            returnObj[2] = commLogFormId;
+            returnObj[3] = commLogRevisionId;
+        }
+        else {
+            throw new Error('The communication log was created successfully, but at least one form was not successfully related to it.');
+        }
+
+        return response.json(200, returnObj);
+    }
+    catch (err) {
+        logger.info(JSON.stringify(err));
+
+        returnObj[0] = 'Error';
+
+        if (err && err.message) {
+            returnObj[1] = err.message;
+        } else {
+            returnObj[1] = "An unhandled error has occurred. The message returned was: " + err;
+        }
+
+        return response.json(returnObj);
+    }
 };
