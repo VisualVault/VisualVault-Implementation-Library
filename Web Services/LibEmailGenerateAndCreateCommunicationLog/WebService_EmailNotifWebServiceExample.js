@@ -1,5 +1,4 @@
 var logger = require('../log');
-var Q = require('q');
 
 module.exports.getCredentials = function () {
     var options = {};
@@ -12,7 +11,7 @@ module.exports.getCredentials = function () {
     return options;
 };
 
-module.exports.main = function (ffCollection, vvClient, response) {
+module.exports.main = async function (ffCollection, vvClient, response) {
     /*Script Name:   EmailNotifWebServiceExample
      Customer:      Implementation Library Code Example
      Purpose:       The purpose of this script is to provide a useful example for how to call LibEmailGenerateAndCreateCommunicationLog
@@ -22,17 +21,17 @@ module.exports.main = function (ffCollection, vvClient, response) {
      Return Array:  The following represents the array of information returned to the calling function.  This is a standardized response.
                     Any item in the array at points 2 or above can be used to return multiple items of information.
                     0 - Status: Success, Error
-		            1 - Message
+                    1 - Message
 
      Pseudocode:   1. Collect data from form
                    2. Call LibEmailGenerateAndCreateCommunicationLog
                    3. Measure and return response
 
      Date of Dev:   01/29/2020
-     Last Rev Date: 
-
+     Last Rev Date: 06/25/2021
      Revision Notes:
      01/29/2020 - Kendra Austin: Initial creation of the business process.
+     06/25/2021 - Agustina Mannise: Update the .then promises to async/await. Also rewrite the creation of emailObject.
 
      */
 
@@ -42,11 +41,12 @@ module.exports.main = function (ffCollection, vvClient, response) {
     var tokenFirstName = '[First Name]';        //Tokens must have the brackets
     var tokenLastName = '[Last Name]';
     var tokenDate = '[Date]';
-    var emailNotificationName = "Kendra's Test Email";
+
 
     //Script Variables
     var errors = [];                    //Used to hold errors as they are found, to return together.
     var revisionId = ffCollection.getFormFieldByName('REVISIONID');
+    var emailNotificationName = ffCollection.getFormFieldByName('Email Name').value;
     var formID = ffCollection.getFormFieldByName('Form ID').value;
     var firstName = ffCollection.getFormFieldByName('First Name').value;
     var lastName = ffCollection.getFormFieldByName('Last Name').value;
@@ -57,10 +57,9 @@ module.exports.main = function (ffCollection, vvClient, response) {
     //Initialization of the return object
     var returnObj = [];
 
-    //Start the promise chain
-    var result = Q.resolve();
+    //Start the try catch section
 
-    return result.then(function () {
+    try {
 
         //Validate passed in fields
         if (!revisionId || !revisionId.value) {
@@ -76,84 +75,60 @@ module.exports.main = function (ffCollection, vvClient, response) {
         if (errors.length > 0) {
             throw new Error(errors);
         }
-    })
-        .then(function () {
-            var emailObject = [];
 
-            var parameterItem = {};
-            parameterItem.name = 'Email Name';      //Required. Can contain apostrophes
-            parameterItem.value = emailNotificationName;
-            emailObject.push(parameterItem);
 
-            var tokens = [
-                { name: tokenFirstName, value: firstName },
-                { name: tokenLastName, value: lastName },
-                { name: tokenDate, value: dateValue }
-            ];
+        var tokens = [
+            { name: tokenFirstName, value: firstName },
+            { name: tokenLastName, value: lastName },
+            { name: tokenDate, value: dateValue }
+        ];
 
-            parameterItem = {};
-            parameterItem.name = 'Tokens';          //Required. Value should be an array of objects with name and value properties.
-            parameterItem.value = tokens;
-            emailObject.push(parameterItem);
+        var emailObject = [
+            { name: 'Email Name', value: emailNotificationName },    //Required. Can contain apostrophes
+            { name: 'Tokens', value: tokens },     //Required. Value should be an array of objects with name and value properties.
+            { name: 'Email Address', value: emailAddress },     //Required unless the email notification template has a standard list of email addresses to send to. 
+            { name: 'Email AddressCC', value: emailCC },   //Not required
+            //{name:'RELATETORECORD', value: relateToRecord},
+            { name: 'APPROVEDTOSEND', value: 'Yes' },
+            { name: 'SendDateTime', value: '' },
+            { name: 'OTHERFIELDSTOUPDATE', value: { "Primary Record ID": formID } }
+        ];
 
-            parameterItem = {};
-            parameterItem.name = 'Email Address';   //Required unless the email notification template has a standard list of email addresses to send to. 
-            parameterItem.value = emailAddress;
-            emailObject.push(parameterItem);
 
-            parameterItem = {};
-            parameterItem.name = 'Email AddressCC';     //Not required
-            parameterItem.value = emailCC;
-            emailObject.push(parameterItem);
-
-            var updateFields = {
-                'Primary Record ID': formID,
-            };
-
-            parameterItem = {};
-            parameterItem.name = 'OTHERFIELDSTOUPDATE'; //Not required if no read-only fields should be updated on the Communications Log
-            parameterItem.value = updateFields;
-            emailObject.push(parameterItem);
-
-            parameterItem = {};
-            parameterItem.name = 'RELATETORECORD';      //Not required if no other records should be related to the Communications Log
-            parameterItem.value = [formID, 'NOTIF-000002'];
-            emailObject.push(parameterItem);
-
-            return vvClient.scripts.runWebService('LibEmailGenerateAndCreateCommunicationLog', emailObject).then(function (emailResp) {
-                //Check for a successful result
-                if (emailResp.meta.status === 200) {
-                    //check userResp.data for success here
-                    if (emailResp.data[0] == 'Success') {
-                        logger.info('Email notification generated successfully.');
-                        //Return response to client side. 
-                        returnObj[0] = 'Success';
-                        returnObj[1] = 'Email created';
-                        return response.json(returnObj);
-                    }
-                    else if (emailResp.data[0] == 'Error') {
-                        throw new Error('The call to generate an email notification returned with an error. ' + emailResp.data[1]);
-                    }
-                    else {
-                        throw new Error("The call to generate an email notification returned with an unhandled error. Please try again or contact a system administrator.");
-                    }
-                }
-                else {
-                    throw new Error("The call to the email generation library returned with an error status. Status returned was: " + emailResp.meta.status);
-                }
-            });
-        })
-        .catch(function (err) {
-            logger.info(JSON.stringify(err));
-
-            returnObj[0] = 'Error';
-
-            if (err && err.message) {
-                returnObj[1] = err.message;
-            } else {
-                returnObj[1] = "An unhandled error has occurred. The message returned was: " + err;
+        let emailResp = await vvClient.scripts.runWebService('LibEmailGenerateAndCreateCommunicationLog', emailObject);
+        //Check for a successful result
+        if (emailResp.meta.status === 200) {
+            //check userResp.data for success here
+            if (emailResp.data[0] == 'Success') {
+                logger.info('Email notification generated successfully.');
+                //Return response to client side. 
+                returnObj[0] = 'Success';
+                returnObj[1] = 'Email notification generated successfully.';
+                return response.json(returnObj);
             }
+            else if (emailResp.data[0] == 'Error') {
+                throw new Error('The call to generate an email notification returned with an error. ' + emailResp.data[1]);
+            }
+            else {
+                throw new Error("The call to generate an email notification returned with an unhandled error. Please try again or contact a system administrator.");
+            }
+        }
+        else {
+            throw new Error("The call to the email generation library returned with an error status. Status returned was: " + emailResp.meta.status);
+        }
+    }
 
-            return response.json(returnObj);
-        })
+    catch (err) {
+        logger.info(JSON.stringify(err));
+
+        returnObj[0] = 'Error';
+
+        if (err && err.message) {
+            returnObj[1] = err.message;
+        } else {
+            returnObj[1] = "An unhandled error has occurred. The message returned was: " + err;
+        }
+
+        return response.json(returnObj);
+    }
 };
