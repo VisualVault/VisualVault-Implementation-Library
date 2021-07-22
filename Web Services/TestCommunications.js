@@ -1,4 +1,3 @@
-var vvEntities = require("../VVRestApi");
 var logger = require('../log');
 
 module.exports.getCredentials = function () {
@@ -12,7 +11,7 @@ module.exports.getCredentials = function () {
     return options;
 };
 
-module.exports.main = function (vvClient, response) {
+module.exports.main = function (vvClient, response, token) {
     /*Script Name:   NodeJSTestCommunication
      Customer:      Auersoft
      Purpose:       Test to make sure communications between VV and NodeJS are working for new installations.    Need to replace the credentials aboe with valid information.  Setup as outside process, then as scheduled process.  Run as scheduled process.
