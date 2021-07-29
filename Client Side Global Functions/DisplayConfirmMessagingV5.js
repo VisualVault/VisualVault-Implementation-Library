@@ -44,6 +44,7 @@ $('#dialog-confirm').dialog({
 				} catch (e){
 					console.error('Could not evaluate okfunction:',e);
 				}
+                                VV.Form.HideLoadingPanel();
 				$(this).dialog('close');
 			},
 			class: 'k-button'
