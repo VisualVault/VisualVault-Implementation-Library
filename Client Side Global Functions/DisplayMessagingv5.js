@@ -34,6 +34,7 @@ $('#dialog-message').dialog({
 		{
 			text: "OK",
 			click: function () {
+                                VV.Form.HideLoadingPanel();
 				$(this).dialog('close');
 			},
 			class: 'k-button'
