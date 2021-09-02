@@ -13,7 +13,7 @@ module.exports.getCredentials = function () {
 
 module.exports.main = function (vvClient, response, token) {
     /*Script Name:   NodeJSTestCommunication
-     Customer:      Auersoft
+     Customer:      VisualVault
      Purpose:       Test to make sure communications between VV and NodeJS are working for new installations.    Need to replace the credentials aboe with valid information.  Setup as outside process, then as scheduled process.  Run as scheduled process.
      Date of Dev:   12/24/2014
      Last Rev Date: 
