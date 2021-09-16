@@ -1,5 +1,4 @@
 var logger = require('../log');
-var Q = require('q');
 
 module.exports.getCredentials = function () {
     var options = {};
@@ -12,9 +11,9 @@ module.exports.getCredentials = function () {
     return options;
 };
 
-module.exports.main = function (ffCollection, vvClient, response) {
+module.exports.main = async function (ffCollection, vvClient, response) {
     /*Script Name:  LibUserUpdate
-     Customer:      Visual Vault
+     Customer:      VisualVault
      Purpose:       The purpose of this NodeJS process will allow a user to be updated with various potential options.  Those options will be turned on or off depending on what is passed to the NodeJS process.
                     NOTE: The username of a user cannot be changed with this script. It must be updated manually in the Control Panel.
                           Passwords cannot be changed with this script. Code is commented out in previous versions of this script on GitHub; to be used when the API is updated. 
@@ -62,16 +61,17 @@ module.exports.main = function (ffCollection, vvClient, response) {
 
      Revision Notes:
      12/20/2018 - Alex Rhee: Initial creation of the business process.
-     1/3/19 - Alex Rhee: Process created and working. Passwords cannot be changed at this time.
-     1/18/19 - Alex Rhee: Made sure all API calls are being measured by Resp.meta.status === 200
+     01/03/2019 - Alex Rhee: Process created and working. Passwords cannot be changed at this time.
+     01/18/2019 - Alex Rhee: Made sure all API calls are being measured by Resp.meta.status === 200
      12/10/2019 - Kendra Austin: Update to include user enable & disable; update header; bug fixes.
      01/08/2020 - Kendra Austin: Update to run a custom query to find the user rather than getUsers. This precludes the need for the user GUID parameter.
+     08/12/2021 - Mauricio Tolosa Transformed scrypt to async await
      */
 
     logger.info('Start of the process LibUserUpdate at ' + Date());
 
     //---------------CONFIG OPTIONS---------------
-    var userQueryName = 'User Lookup';         //The name of the custom query in Default queries (NOT in form data queries)
+    var userQueryName = 'UserLookup';         //The name of the custom query in Default queries (NOT in form data queries)
 
     //------------------END OPTIONS----------------
 
@@ -99,10 +99,10 @@ module.exports.main = function (ffCollection, vvClient, response) {
     var currentGroups = [];                                             //Variable to hold current site groups
 
     //Start the promise chain
-    var result = Q.resolve();
+   
 
-    return result.then(function () {
-
+   
+try{
         //Validate passed in fields
         if (!action || !action.value) {     //Action is always required
             errorArray.push("The Action parameter was not supplied.")
@@ -125,14 +125,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
         if (errorArray.length > 0) {
             throw new Error(errorArray);
         }
-    })
-        .then(function () {
+    
+       
             //First, run the custom query to get the userGUID and other user information. This will be needed later. See comment header for fields.
 
             //Query on the user ID
             var userQueryParams = { filter: "[UsUserID] = '" + userID + "'" }
 
-            return vvClient.customQuery.getCustomQueryResultsByName(userQueryName, userQueryParams).then(function (userRes) {
+            let userRes = await vvClient.customQuery.getCustomQueryResultsByName(userQueryName, userQueryParams) 
                 var userData = JSON.parse(userRes);
                 if (userData.meta.status == 200) {
                     if (userData.data.length == 1) {
@@ -160,15 +160,15 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 else {
                     throw new Error('There was an error when searching for the user ' + userID + '.');
                 }
-            })
-        })
-        .then(function () {
+            
+
+       
             //If enable is needed, do that first. This allows us to update the user if needed. 
             if (action == 'Enable') {
                 var userEnableObj = {};
                 userEnableObj.enabled = 'true';
 
-                return vvClient.users.putUsersEndpoint({}, userEnableObj, userGUID).then(function (enableResp) {
+                let enableResp = await vvClient.users.putUsersEndpoint({}, userEnableObj, userGUID) 
                     //Measure the response & send a response to the client
                     if (enableResp.meta.status == 200) {
                         logger.info('User enabled successfully. User ID ' + userID + '.');
@@ -176,16 +176,15 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     else {
                         throw new Error('Attempt to enable the user account encountered an error.')         //TODO: Add status message?
                     }
-                });
-            }
-        })
-        .then(function () {
+                };
+        
+        
             //Disable the user account if needed. Immediately return a reponse; no further actions taken.
             if (action == 'Disable') {
                 var userDisableObj = {};
                 userDisableObj.enabled = 'false';
 
-                return vvClient.users.putUsersEndpoint({}, userDisableObj, userGUID).then(function (disableResp) {
+                let disableResp = await vvClient.users.putUsersEndpoint({}, userDisableObj, userGUID)
                     //Measure the response & send a response to the client
                     if (disableResp.meta.status == 200) {
                         returnObj[0] = 'Success';
@@ -196,10 +195,10 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     else {
                         throw new Error('Attempt to disable the user account encountered an error.')        //TODO: Add status message?
                     }
-                });
-            }
-        })
-        .then(function () {
+            };
+        
+        
+        
             //Determine what information the user wants to change and load that info into an update object
             var userUpdateObj = {};
 
@@ -224,17 +223,17 @@ module.exports.main = function (ffCollection, vvClient, response) {
             //Check if anything needs to be updated
             if (userUpdateObj.firstname || userUpdateObj.lastname || userUpdateObj.middleinitial) {
                 //if update needed, send the user update object through putUsers to update the user information
-                return vvClient.users.putUsers({}, userUpdateObj, siteID, userGUID).then(function (updateResp) {
+                let updateResp = await vvClient.users.putUsers({}, userUpdateObj, siteID, userGUID)
                     if (updateResp.meta.status == 200) {
                         logger.info('User updated successfully. User ID ' + userID + '.');
                     }
                     else {
                         throw new Error('Attempt to update the user account encountered an error.')         //TODO: Add status message?
                     }
-                });
-            }
-        })
-        .then(function () {
+                };
+            
+        
+
             //Determine if the email address needs to be changed. If so, load that info into a new email object.
             var emailUpdateObj = {};    //New user data object for updating emails specifically
 
@@ -247,17 +246,17 @@ module.exports.main = function (ffCollection, vvClient, response) {
             //Check if the email address needs to be updated
             if (emailUpdateObj.emailaddress) {
                 //if update needed, send the email update object through putUsersEndpoint to update the email information
-                return vvClient.users.putUsersEndpoint({}, emailUpdateObj, userGUID).then(function (emailUpdateResp) {
+                let emailUpdateResp = await vvClient.users.putUsersEndpoint({}, emailUpdateObj, userGUID)
                     if (emailUpdateResp.meta.status == 200) {
                         logger.info('User email address updated successfully. User ID ' + userID + '.');
                     }
                     else {
                         throw new Error('Attempt to update the user email address encountered an error.')         //TODO: Add status message?
                     }
-                });
+                ;
             }
-        })
-        .then(function () {
+        
+        
             //If Group List or Remove Group List were passed in as parameters, call getGroups to ensure they exist.
             if (groupList) {
                 if (groupList.value && groupList.value != '' && groupList.value != ' ') {
@@ -280,14 +279,14 @@ module.exports.main = function (ffCollection, vvClient, response) {
                 groupParam.fields = 'id,name,description';
 
                 //Function to get all current groups
-                return vvClient.groups.getGroups(groupParam).then(function (groupResp) {
+                let groupResp = await vvClient.groups.getGroups(groupParam)
                     var groupData = JSON.parse(groupResp);
                     if (groupData.meta.status === 200) {
                         if (groupData.data.length > 0) {
                             //Push the group data into an array for processing
-                            groupData.data.forEach(function (group) {
+                            for (let group of groupData.data) {//added .data
                                 currentGroups.push(group);
-                            });
+                            };
                         }
                         else {
                             throw new Error('No groups were found to exist.');
@@ -296,29 +295,31 @@ module.exports.main = function (ffCollection, vvClient, response) {
                     else {
                         throw new Error('There was an error when searching for groups');            //TODO: Add status message?
                     }
-                });
-            }
-        })
-        .then(function () {
+                };
+            
+
+
             //Add the groups in Group List.
             if (groupOption) {
                 //For each item in groupList, trim it, then make sure it's mapped to a group in currentGroups. If it is, call addUserToGroup. 
-                var addGroupProcess = Q.resolve();
+                
 
                 //Add the user to each of the groups in the groupIdArray
-                groupList.forEach(function (addGroupItem) {
-                    addGroupProcess = addGroupProcess.then(function () {
+                for(let addGroupItem of groupList)
+                {
+                    
                         //Set groupData to blank and groupFound to false. 
                         var groupData = {};
                         var groupFound = false;
 
                         //Go through each current group and see if one of them is the group being added
-                        currentGroups.forEach(function (currentGroup) {
+                        for (let currentGroup of currentGroups)
+                         {
                             if (currentGroup.name == addGroupItem.trim()) {
                                 groupData = currentGroup;
                                 groupFound = true;
                             }
-                        });
+                        };
 
                         //If the group wasn't found after looping through all current groups, log an error
                         if (!groupFound) {
@@ -326,7 +327,7 @@ module.exports.main = function (ffCollection, vvClient, response) {
                         }
                         else {
                             //If the group was found, then add it to the user profile.
-                            return vvClient.groups.addUserToGroup({}, groupData.id, userGUID).then(function (groupAddResp) {
+                            let groupAddResp = await vvClient.groups.addUserToGroup({}, groupData.id, userGUID) 
                                 var addGroupRespObj = JSON.parse(groupAddResp);
                                 //201 is success; 400 means the user is already part of the group. Both are successful results.
                                 if (addGroupRespObj.meta.status === 201 || addGroupRespObj.meta.status === 400) {
@@ -336,59 +337,56 @@ module.exports.main = function (ffCollection, vvClient, response) {
                                     logger.info('Call to add user to group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
                                     errorArray.push('Call to add user to group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
                                 }
-                            })
+                            
                         }
-                    })
-                });
+                    }
+                
+                  
+                };
 
-                return addGroupProcess;
-            }
-        })
-        .then(function () {
+               
+            
+        
+        
             //Remove the groups in Remove Group List.
             if (removeGroupOption) {
                 //For each item in removeGroupList, trim it, then make sure it's mapped to a group in currentGroups. If it is, call removeUserFromGroup.
-                var removeGroupProcess = Q.resolve();
-
                 //Add the user to each of the groups in the groupIdArray
-                removeGroupList.forEach(function (removeGroupItem) {
-                    removeGroupProcess = removeGroupProcess.then(function () {
-                        //Set groupData to blank and groupFound to false. 
-                        var groupData = {};
-                        var groupFound = false;
+                for(let removeGroupItem of removeGroupList){ var groupData = {};
+                var groupFound = false;
+ 
+                //Go through each current group and see if one of them is the group being added
+                for (let currentGroup of currentGroups) {
+                    if (currentGroup.name == removeGroupItem.trim()) {
+                        groupData = currentGroup;
+                        groupFound = true;
+                    }
+                };
 
-                        //Go through each current group and see if one of them is the group being added
-                        currentGroups.forEach(function (currentGroup) {
-                            if (currentGroup.name == removeGroupItem.trim()) {
-                                groupData = currentGroup;
-                                groupFound = true;
-                            }
-                        });
-
-                        //If the group wasn't found after looping through all current groups, log an error
-                        if (!groupFound) {
-                            errorArray.push('The group ' + removeGroupItem.trim() + ' could not be removed from the user profile because the group was not found.');
+                //If the group wasn't found after looping through all current groups, log an error
+                if (!groupFound) {
+                    errorArray.push('The group ' + removeGroupItem.trim() + ' could not be removed from the user profile because the group was not found.');
+                }
+                else {
+                    //If the group was found, then add it to the user profile.
+                    let groupRemoveResp = await vvClient.groups.removeUserFromGroup({}, groupData.id, userGUID)
+                        var removeGroupRespObj = JSON.parse(groupRemoveResp);
+                        if (removeGroupRespObj.meta.status === 200) {
+                            logger.info('User removed from group ' + groupData.name + ' successfully.');
                         }
                         else {
-                            //If the group was found, then add it to the user profile.
-                            return vvClient.groups.removeUserFromGroup({}, groupData.id, userGUID).then(function (groupRemoveResp) {
-                                var removeGroupRespObj = JSON.parse(groupRemoveResp);
-                                if (removeGroupRespObj.meta.status === 200) {
-                                    logger.info('User removed from group ' + groupData.name + ' successfully.');
-                                }
-                                else {
-                                    logger.info('Call to remove user from group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
-                                    errorArray.push('Call to remove user from group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
-                                }
-                            })
+                            logger.info('Call to remove user from group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
+                            errorArray.push('Call to remove user from group ' + groupData.name + ' returned with an unsuccessful status code.');    //TODO: Add status message?
                         }
-                    })
-                });
-
-                return removeGroupProcess;
+                    }
+                }
+                //Set groupData to blank and groupFound to false. 
+               
             }
-        })
-        .then(function () {
+
+               
+              
+       
             if (errorArray.length > 0) {
                 throw new Error('The user groups may not have been fully updated. ' + errorArray);
             }
@@ -398,8 +396,9 @@ module.exports.main = function (ffCollection, vvClient, response) {
             returnObj[1] = 'User updated.';
             returnObj[2] = userGUID;
             return response.json(returnObj);
-        })
-        .catch(function (err) {
+}
+        
+        catch (err) {
             logger.info(JSON.stringify(err));
 
             returnObj[0] = 'Error';
@@ -411,5 +410,5 @@ module.exports.main = function (ffCollection, vvClient, response) {
             }
 
             return response.json(returnObj);
-        });
+        };
 }
