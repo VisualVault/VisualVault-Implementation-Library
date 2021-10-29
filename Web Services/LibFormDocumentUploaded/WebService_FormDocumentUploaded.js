@@ -31,29 +31,45 @@ module.exports.main = async function (ffCollection, vvClient, response) {
                 3. Measure and return response.
 
     Date of Dev:   06/25/2021
-    Last Rev Date: 06/25/2021
+    Last Rev Date: 08/18/2021
     Revision Notes:
     06/25/2021 - Agustina Mannise: Initial creation of the business process.
+    08/18/2021 - Agustina Mannise: Add data validation. 
 
     */
 
     logger.info('Start of the process FormDocumentUploaded at ' + Date());
 
     //Script Variables, global variables.
-    var templateName = ffCollection.getFormFieldByName('Template Name').value;
-    var formId = ffCollection.getFormFieldByName('Form ID').value;
+    var templateName = ffCollection.getFormFieldByName('Template Name');
+    var formId = ffCollection.getFormFieldByName('Form ID');
 
     //Initialization of the return object.
     var returnObj = [];
+    var errors = [];
 
     //Start the try catch
 
     try {
+        //Validate passed in fields   
+        if (!formId || !formId.value.trim()) {
+            errors.push("The Form ID parameter was not supplied.")
+        }
+
+        if (!templateName || !templateName.value.trim()) {
+            errors.push("The Template Name parameter was not supplied.")
+        }
+
+        if (errors.length > 0) {
+            throw new Error(errors);
+        }
+
         //This array will hold the information to call LibFormDocumentUploaded.
         var formDocRequestArray = [
-            { name: 'Template Name', value: templateName },
-            { name: 'Form ID', value: formId }
+            { name: 'Template Name', value: templateName.value },
+            { name: 'Form ID', value: formId.value }
         ];
+
         //This is calling the library web service. 
         let resp = await vvClient.scripts.runWebService('LibFormDocumentUploaded', formDocRequestArray);
 
@@ -66,7 +82,7 @@ module.exports.main = async function (ffCollection, vvClient, response) {
             if (resp.hasOwnProperty('data')) {
                 if (resp.data[0] == 'Success' || resp.data[0] == 'No Docs') {
                     logger.info('Succesfully finished the process.');
-                    returnObj[0] = 'Success';
+                    returnObj[0] = resp.data[0];
                     returnObj[1] = resp.data[1];
                     return response.json(returnObj);
                 } else if (resp.data[0] == 'Error') {
