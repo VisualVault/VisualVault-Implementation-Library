@@ -12,7 +12,7 @@ module.exports.getCredentials = function () {
 };
 
 module.exports.main = async function (ffCollection, vvClient, response) {
-    /*Script Name:  LibFormDocumentUploaded
+    /*Script Name:  LibFormDocmentUploaded
      Customer:      VisualVault
      Purpose:       The purpose of this process is to determine whether a document has been uploaded to the current form. 
      Parameters: The following represent variables passed into the function:
@@ -48,76 +48,77 @@ module.exports.main = async function (ffCollection, vvClient, response) {
                 returnArray[0] = ‘Error’
                 returnArray[1] = Return the error that occurred in the above logic.
      Date of Dev:   1/15/2020
-     Last Rev Date: 06/25/2021
+     Last Rev Date: 08/18/2021
      Revision Notes:
      01/15/2020 - Alyssa Carpenter: Initial creation of the business process.
-     06/25/2021 - Agustina Mannise: Update the .then prmises to async/await.
+     06/25/2021 - Agustina Mannise: Update the .then promises to async/await.
+     08/18/2021 - Agustina Mannise: Update the name of some variables.
      */
 
     logger.info('Start of the process LibFormDocumentUploaded at ' + Date());
 
     //Configuration Variables
-        
+
     //Script Variables
     var errors = [];                    //Used to hold errors as they are found, to return together.
     var formOrRevId = ffCollection.getFormFieldByName('Form ID'); //unpack the fields you passed in, this is object with name and value
     var templateName = ffCollection.getFormFieldByName('Template Name');
     var revisionIdIsGUID = false; //set flag
-        
+
     //Initialization of the return object
     var returnObj = [];
-    
+
     //~~~~~~~~Helper Functions~~~~~~~~
-    
+
     //Check if formOrRevId is a GUID 
-    function CheckGUID(stringToTest){ 
+    function CheckGUID(stringToTest) {
         var regexGuid = /^(\{){0,1}[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}(\}){0,1}$/gi;
         return regexGuid.test(stringToTest);
     }
 
     //~~~~~~~~~Start try catch~~~~~~~~~
-    
+
     try {
         //Validate passed in fields   
         if (!formOrRevId || !formOrRevId.value.trim()) {
             errors.push("The Form ID parameter was not supplied.")
         }
         else {
-            formOrRevId = formOrRevId.value; 
+            formOrRevId = formOrRevId.value;
         }
 
-        if(CheckGUID(formOrRevId)){
+        if (CheckGUID(formOrRevId)) {
             revisionIdIsGUID = true;
         }
-        
-        if (!templateName || !templateName.value.trim()) {  
+
+        if (!templateName || !templateName.value.trim()) {
             errors.push("The Template Name parameter was not supplied.")
         }
         else {
-            templateName = templateName.value; 
+            templateName = templateName.value;
         }
-        
+
 
         //Return all validation errors at once.
         if (errors.length > 0) {
             throw new Error(errors);
         }
-        
-        if(!revisionIdIsGUID){
+
+        if (!revisionIdIsGUID) {
             //use getForms to get the revisionId from templateName and formOrRevId (which is the Form ID here)
             var params = {};
             params.q = "[instanceName] eq '" + formOrRevId + "'";
             params.fields = 'revisionId';
             var formResp = await vvClient.forms.getForms(params, templateName);
         }
-    
+
         //get DhID into one resp variable (revisionId)
-        if(!revisionIdIsGUID){
+        if (!revisionIdIsGUID) {
             var resp = JSON.parse(formResp);
             if (resp.hasOwnProperty('meta') && resp.meta.status === 200) {
                 if (resp.hasOwnProperty('data')) {
                     if (resp.data.length === 1) { //only one Form ID was found, so this gives the correct Revision ID
-                        revisionId = resp.data[0].revisionId;
+                        formOrRevId = resp.data[0].revisionId;
                     }
                     else if (resp.data.length === 0) {
                         throw new Error('Unable to determine if documents have been uploaded. Either this form has not yet been saved or does not exist.');
@@ -134,14 +135,14 @@ module.exports.main = async function (ffCollection, vvClient, response) {
                 throw new Error('Unable to determine if documents have been uploaded. Call to get forms returned with an error.');
             }
         }
-        
+
         //Call getFormRelatedDocs to get all documents related to the form. Get index fields also
         var docParams = {};
         docParams.indexFields = 'include';
         docParams.limit = '2000';
 
-        let formDocResp = await vvClient.forms.getFormRelatedDocs(revisionId, docParams);
-        
+        let formDocResp = await vvClient.forms.getFormRelatedDocs(formOrRevId, docParams);
+
         var resp = JSON.parse(formDocResp);
         if (resp.hasOwnProperty('meta') && resp.meta.status === 200) {
             if (resp.hasOwnProperty('data') && resp.data.length === 0) {
@@ -157,11 +158,11 @@ module.exports.main = async function (ffCollection, vvClient, response) {
         else {
             throw new Error('Unable to determine if documents have been uploaded. Call to get related docs returned with an error.');
         }
-        
+
         return response.json(returnObj);
-        
+
     }
-    catch(err) {
+    catch (err) {
         logger.info(JSON.stringify(err));
 
         returnObj[0] = 'Error';
