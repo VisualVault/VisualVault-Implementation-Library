@@ -29,7 +29,7 @@ module.exports.main = async function (vvClient, response, token) {
                     Step3:  Measure results and communicate completion.
            
      Date of Dev:   05/14/2019
-     Last Rev Date: 04/27/2020
+     Last Rev Date: 02/04/2022
 
      Revision Notes:
      05/14/2019 - Jason Hatch:  Initial creation of the business process. 
@@ -40,6 +40,7 @@ module.exports.main = async function (vvClient, response, token) {
      08/06/2019: Rufus Peoples - For use in Lincoln Comm Log
      08/19/2019 - Kendra Austin: updated time zone to Central for Lincoln. 
      04/27/2020 - Kendra Austin: Updated to include timeout mechanism and convert to async/await.
+     02/04/2022 - Jason Hatch:   Updated to use iso string.
      */
 
 
@@ -50,7 +51,7 @@ module.exports.main = async function (vvClient, response, token) {
     //CONFIGURABLE VALUES IN THE FOLLOWING AREA.
     var commLogTemplateID = 'Communications Log';
     var commLogQuery = 'Communication Send Immediately';
-    var frequencyEmailSendinms = 5000;   //This is the number of milleseconds delay between sending each email.
+    var frequencyEmailSendinms = 500;   //This is the number of milleseconds delay between sending each email.
 
     var timeZone = 'America/New_York';
     /* Reference List of Moment Timezones: 
@@ -126,10 +127,10 @@ module.exports.main = async function (vvClient, response, token) {
 
                 //Load object to update comm log record. Include local timestamp
                 var updateObj = {};
-                var sendDate = momentTz().tz(timeZone).format('L');
-                var sendTime = momentTz().tz(timeZone).format('LT');
-                var localScheduledTime = sendDate + " " + sendTime;
-                updateObj['Communication Date'] = localScheduledTime;
+                //var sendDate = momentTz().tz(timeZone).format('L');
+                //var sendTime = momentTz().tz(timeZone).format('LT');
+                //var localScheduledTime = sendDate + " " + sendTime;
+                updateObj['Communication Date'] = new Date().toISOString();
                 updateObj['Communication Sent'] = 'Yes';
 
                 //Update comm log record to reflect sent
