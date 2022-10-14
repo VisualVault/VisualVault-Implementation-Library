@@ -1,51 +1,140 @@
-//Parameter passed:  timeVal
-//The purpose of this function is to take a time string entered in any format and format it into a standard of HH:MM AM or HH:MM PM.
+/*
+	Script Name:   FormatTime
+	Customer:      VisualVault
+	Purpose:       The purpose of this function is to take a time string entered in any format and format it into a standard of HH:MM AM or HH:MM PM.
+	Parameters:    The following represent variables passed into the function:
+				   -timeEntered: string value that represents the time
+				  
+	Return Value:  The following represents the value being returned from this function:
+                   -timeEntered: string value (In case format is not applyable)
+                   -timeString: string value   (In case format is applyable)
+    
+	Date of Dev: 12/07/2018
+	Last Rev Date: 06/22/2022
+	Revision Notes:
+				12/07/2018 - Jason Hatch: Initial creation of the logic
+				06/22/2022 - Franco Petosa Ayala: Update to ES6 and better handling.
+*/
 
+//verify the string contains "AM/PM/:"
+let timeString = (timeEntered.toString()).toUpperCase();
+let isAM = timeString.includes("AM");
+let isPM = timeString.includes("PM");
 
-//Get values from the original value passed to the function.
-var colonPlacement = timeVal.search(":")
-timeVal = timeVal.toUpperCase();
-var amLocation = timeVal.search('AM');
-var pmLocation = timeVal.search('PM');
+const isColon = timeString.includes(":");
 
-//Remove all characters
-var s2 = ("" + timeVal).replace(/\D/g, '');
+//build the string array based on the timeString digits
+let stringArr = timeString.split("")
+stringArr = stringArr.filter(digit => {
+  if(!isNaN(digit) && digit != " "){
+    return true
+  }else if(digit == ":"){
+     return true
+  }else{
+    return false
+  }
+})
 
-var newTimeStr = '';
-//If colon was present, format the string.
-if (colonPlacement > 0) {
-    newTimeStr = s2.substr(0, colonPlacement) + ":" + s2.substr(colonPlacement, 2);
+//verify is not an empty array
+if(stringArr.length === 0){
+    return timeEntered
 }
-else {
-    //Handle what occurs if a colon was not present.
-    if (s2.length < 3) {
-        //return when not enough characters were entered, time check will communicate the format.  
-        return timeVal;
+
+//build the string time only with time logical simbols: numbers and ":"
+timeString = stringArr.join("")
+
+let hour = '';
+let minutes = '';
+  
+if(isColon){ // expected passed parameter value: HH:MM
+
+    hour = timeString.split(":")[0]; //catch hour digits
+    minutes = timeString.split(":")[1]; //catch minutes digits
+
+}else if(timeString.length === 4){ // expected passed parameter value: HHMM
+  
+    //verify is valid military time format HHMM
+    if(parseFloat(timeString) > 2400){
+        return timeEntered
     }
-    else if (s2.length == 3) {
-        //Attempt to put the colon after the first character.
-        newTimeStr = "0" + s2.substr(0, 1) + ":" + s2.substr(1, 2);
-    }
-    else if (s2.length ==4) {
-        //Attempt to put the colon after the second character.
-        newTimeStr = s2.substr(0, 2) + ":" + s2.substr(2, 2);
-    }
-    else if (s2.length > 4) {
-        //Too many characters were entered, time check will communicate the format.
-        return timeVal;
-    }
+  
+    //In military time format the 2 first digit corresponds to the hour and the other last 2 to the minutes
+    hour = timeString[0] + timeString[1] ; //catch hour digits
+    minutes = timeString[2] + timeString[3]; //catch minutes digits
+  
+}else if(timeString.length === 3){ // expected passed parameter value: HMM
+
+    //In military time format the first digit corresponds to the hour and the other last 2 to the minutes
+    hour = '0' + timeString[0] ; //catch hour digits
+    minutes = timeString[1] + timeString[2]; //catch minutes digits
+
+}else if(isAM || isPM){ // expected timeString value: HH
+
+    hour = timeString;
+    minutes = '00';
+
+}else{
+    //In this case it is assumed that the timeEntered value is not a valid string time
+    return timeEntered
 }
 
-//Add the time of day back into the string.
-if (amLocation > 0) {
-    newTimeStr = newTimeStr + " AM";
-}
-else if (pmLocation > 0) {
-    newTimeStr = newTimeStr + " PM";
-}
-else {
-    //Not doing anything in this state because the user has not entered a value.
+//verify is valid hour and minute format HH / MM
+if(hour === "" || minutes === ""){
+    return timeEntered
+}else if(hour.length > 2 || minutes.length > 2){
+    return timeEntered
 }
 
-return newTimeStr;
+//if includes AM or PM the hour must be between 1 and 12
+if(isAM || isPM){
+    if(parseFloat(hour) <= 0 || parseFloat(hour) > 12){
+        return timeEntered
+    }
+} 
+
+//verify the hour has a logical value between 0 and 23
+if(parseFloat(hour) >= 24){
+    return timeEntered
+}
+  
+//verify the minutes have a logical value between 0 and 59
+if(parseFloat(minutes) >= 60){
+    return timeEntered
+}
+  
+//build the string time formated
+
+//if AM/PM is missing it can still be assumed by the hour
+if(!isAM && !isPM && parseFloat(hour) < 12){
+    isAM = true;
+}else if(!isAM && !isPM && parseFloat(hour) >= 12){
+    isPM = true;
+}
+  
+//format hour to HH
+if(parseFloat(hour) === 0){
+    hour = '12'
+}else if(parseFloat(hour) < 10){
+    hour = `0${parseFloat(hour)}`;
+}else if(parseFloat(hour) > 12 && parseFloat(hour) < 22){
+    hour = `0${parseFloat(hour)-12}`;
+}else if(parseFloat(hour) >= 22){
+    hour = `${parseFloat(hour)-12}`;
+}
+
+//format minutes to MM
+if(parseFloat(minutes) < 10){
+    minutes = `0${parseFloat(minutes)}`;
+}else if(minutes === undefined){
+    minutes = `00`;
+}
+  
+//concat AM or PM to timeString 
+if(isAM){
+    timeString = `${hour}:${minutes} AM`
+}else if(isPM){
+    timeString = `${hour}:${minutes} PM`
+}
+
+return timeString
 
