@@ -11,7 +11,7 @@
                     Mapped field array example for build fieldMappings
                      var mappedField = {};
                      mappedField.sourceFieldName = 'providerId';
-                     mappedField.sourceFieldValue = VV.Form.GetFieldValue('Provider ID');
+                     mappedField.sourceFieldValue = VV.Form.GetFieldValue('providerId');
                      mappedField.targetFieldName = 'Provider ID';
                      fieldMappings.push(mappedField);
                    
