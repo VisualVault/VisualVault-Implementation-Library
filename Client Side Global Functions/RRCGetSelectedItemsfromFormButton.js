@@ -1,7 +1,18 @@
 /*
-Function: RRCGetSelectedItemsfromFormButton
-Purpose:  Get list of selected records from an RRC.  This is called from a form button instead of an RRC button.
-Parameters: rrcName: Name of the RRC control
+    Script Name:   RRCGetSelectedItemsfromFormButton
+    Customer:      VisualVault
+    Purpose:       Get list of selected records from an RRC.  This is called from a form button instead of an RRC button  
+                   For this to work the RRC needs to be configured to show at least 1 button embedded into the RRC.  Otherwise the selection options are not available.
+                   
+    Parameters:    The following represent variables passed into the function:  
+                   rrcName: Name of the RRC control
+                   
+    Return Value:  The following represents the value being returned from this function:
+                   docIDs:  Array of Form IDs/Instance Names/Dhdocids that represent the forms selected.           
+    Date of Dev:   
+    Last Rev Date: 12/21/2021
+    Revision Notes:
+    12/13/2021 - Jason Hatch: Initial creation of the business process. 
 */
 
 var rrcControl = $('[VVFieldName="' + rrcName + '"]')[0];
