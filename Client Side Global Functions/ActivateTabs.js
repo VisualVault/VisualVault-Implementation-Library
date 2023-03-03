@@ -12,7 +12,7 @@
     07/28/2020 - Kendra Austin: Initial creation of the business process. 
 */
 
-var styleNames = ['.styleMenu', '.styleTabButtons'];
+var styleNames = ['.styleMenu', '.styleTabButtons'];;
 
 for (var x = 0; x < styleNames.length; x++) {
 	//Get the list of controls in this container. 
