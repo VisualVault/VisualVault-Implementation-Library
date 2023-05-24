@@ -10,22 +10,25 @@
                     These work in conjunction with the SetupReg file where all the regular expressions are stored.
     Return Value:  The following represents the value being returned from this function:
                     True if required number are selected, false if not.        
-    Date of Dev:   
-    Last Rev Date: 07/22/2020
+    Date of Dev:   06/01/2011
+    Last Rev Date: 05/24/2022
     Revision Notes:
-    06/01/2011 - Jason Hatch: Initial creation of the business process. 
-    04/15/2019 - Maxwell Rehbein : NumberOnly created. 
-	07/22/2020 - Kendra Austin: Two medicaid ID types created.
+    06/01/2011 - Jason Hatch:         Initial creation of the business process. 
+    04/15/2019 - Maxwell Rehbein:     NumberOnly created. 
+    07/22/2020 - Kendra Austin:       Two medicaid ID types created.
+    05/24/2022 - Franco Petosa Ayala: Update function to ES6.
+                                      Replace the conditional argument typeof VV.Form.Global.EmailReg === 'undefined' for !VV.Form.Global.EmailReg
+                                      The alert function from the default case of the switch conditional structure was replaced for the global function DisplayMessaging
 */
 
+let PassedControlValue = '';
 
-if (typeof VV.Form.Global.EmailReg === 'undefined') {
-    VV.Form.Global.SetupReg();
-}
+//check if the regular expression are already created
+if (!VV.Form.Global.EmailReg) VV.Form.Global.SetupReg();
 
 // if PassedValue returns actual value
-if (PassedValue.trim()) {
-    var PassedControlValue = PassedValue.trim();
+if (PassedValue) {
+    PassedControlValue = PassedValue.trim();
 } else {
     return false;
 }
@@ -68,13 +71,13 @@ switch (ValidationType) {
     case 'NumberOnly':
         return VV.Form.Global.NumberOnly.test(PassedControlValue);
 
-	case 'MedicaidRecipientID':
-		return VV.Form.Global.MedicaidIDRecipient.test(PassedControlValue); 
+    case 'MedicaidRecipientID':
+        return VV.Form.Global.MedicaidIDRecipient.test(PassedControlValue);
 
-	case 'MedicaidProviderID':
-		return VV.Form.Global.MedicaidIDProvider.test(PassedControlValue); 
+    case 'MedicaidProviderID':
+        return VV.Form.Global.MedicaidIDProvider.test(PassedControlValue);
 
     default:
-        alert('The right validation was not passed to the CentralValidation Function: ' + ValidationType);
+        VV.Form.Global.DisplayMessaging(`The right validation was not passed to the CentralValidation Function: <b>${ValidationType}</b>`, 'CentralValidation');
         return false;
 }
