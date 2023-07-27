@@ -1,0 +1,101 @@
+//Starting template for the Try It! activity in course 412-VV-IMPL
+const logger = require("../log");
+const moment = require('moment');
+
+module.exports.getCredentials = function () {
+  var options = {};
+  options.customerAlias = "";
+  options.databaseAlias = "";
+  options.userId = "";
+  options.password = "";
+  options.clientId = "";
+  options.clientSecret = "";
+  return options;
+};
+
+module.exports.main = async function (vvClient, response, token) {
+  /*Script Name:   SCRIPTNAME
+    Customer:      DATABASE NAME
+    Purpose:       DESCRIPTION OF WHAT THE SCRIPT DOES
+    Parameters:    N/A
+
+    Return Array:   [0] Status: 'Success', 'Error'
+                    [1] Message
+
+    Pseudo code:    1. FIRST DO THIS
+                        1A. STEPS TO MAKE 1 HAPPEN, IF NEEDED
+                        1B. STEPS TO MAKE 1 HAPPEN, IF NEEDED
+                    2. THEN DO THIS
+
+    
+    Date of Dev: DATE
+    Last Rev Date: DATE
+    Revision Notes:
+    DATE - DEVELOPER NAME: Script created
+    */
+
+    logger.info(
+        "Start of the process SCRIPTNAME at " + Date(),
+    );
+
+    //Respond immediately with the following line so the server knows things are running and it is waiting for an API call to update the process status.  
+    response.json('200', 'Process started, please check back in this log for more information as the process completes.'); //This line should be commented out in development.
+
+    /**********************
+     Configurable Variables
+    ***********************/
+    
+    // Form Template Name
+    let contactUsTemplateID = 'Contact Us'; //STEP 
+
+    //Date 6 months in past, to be used in the filtering statement for the getForms() call
+    let sixMonthsPast; //SEE STEP 
+    
+    //Query Object for the getForms() call
+    var formQueryObj = {}; 
+    formQueryObj.q = ""; //Filtering statement; SEE STEP
+    formQueryObj.expand = true;
+    
+     // Messages used in results token that shows results of the process.
+    let successMessage = ""; 
+    let errorMessage = "Error encountered";
+
+    //Other globally used variables.
+    var errorLog = [];   //Array for capturing error messages that may occur.
+
+    /****************
+     Script Variables
+    *****************/
+    
+    /****************
+     Helper Functions
+    *****************/
+
+    try {
+        /****************
+         BEGIN ASYNC CODE
+        *****************/
+        // STEP 1
+        
+        // STEP 2
+
+    } catch (error) {
+        //Uncomment the following line for development
+        //response.json('200', 'Error encountered during processing.  Error was ' + err );
+        errorLog.push(error);
+    } finally {
+        // Log errors captured.
+        logger.info(JSON.stringify(`${errorLog}`));
+
+        if (errorLog.length) {
+            //Uncomment the following line for development
+            //response.json('200', errorMessage);
+            return vvClient.scheduledProcess.postCompletion(token, "complete", true, errorMessage,);
+        } else {
+            //Uncomment the following line for development
+            //response.json('200', successMessage);
+            return vvClient.scheduledProcess.postCompletion(token, "complete", true, successMessage,
+        );
+        }
+    }
+};      
