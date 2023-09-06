@@ -84,10 +84,11 @@ module.exports.main = async function (vvClient, response, token) {
         //response.json('200', 'Error encountered during processing.  Error was ' + err );
         errorLog.push(error);
     } finally {
-        // Log errors captured.
-        logger.info(JSON.stringify(`${errorLog}`));
-
+        //STEP 3 - Log any errors and send the response to the server.
         if (errorLog.length) {
+            //Log errors
+            logger.info('Errors encounterd in the process SCRIPTNAME: ' + JSON.stringify(`${errorLog}`));
+            
             //Uncomment the following line for development
             //response.json('200', errorMessage);
             return vvClient.scheduledProcess.postCompletion(token, "complete", true, errorMessage,);
