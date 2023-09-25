@@ -1,6 +1,6 @@
-//Starting template for the Try It! activity in course 412-VV-IMPL
+//SCRIPTNAME
 const logger = require("../log");
-const moment = require('moment');
+const dayjs = require('dayjs');
 
 module.exports.getCredentials = function () {
   var options = {};
@@ -34,9 +34,7 @@ module.exports.main = async function (vvClient, response, token) {
     DATE - DEVELOPER NAME: Script created
     */
 
-    logger.info(
-        "Start of the process SCRIPTNAME at " + Date(),
-    );
+    logger.info(`Start of the process DisableStaffRecordsSCH at ${Date()}`);
 
     //Respond immediately with the following line so the server knows things are running and it is waiting for an API call to update the process status.  
     response.json('200', 'Process started, please check back in this log for more information as the process completes.'); //This line should be commented out in development.
@@ -46,26 +44,31 @@ module.exports.main = async function (vvClient, response, token) {
     ***********************/
     
     // Form Template Name
-    let contactUsTemplateID = 'Contact Us'; //STEP 
+    let contactUsTemplateID = ''; //SEE Part 3, Step 2
 
     //Date 6 months in past, to be used in the filtering statement for the getForms() call
-    let sixMonthsPast; //SEE STEP 
+    let sixMonthsPast = ''; //SEE Part 3, Step 4
     
     //Query Object for the getForms() call
-    var formQueryObj = {}; 
-    formQueryObj.q = ""; //Filtering statement; SEE STEP
+    var formQueryObj = {};
+    formQueryObj.q = ""; //Filtering statement; SEE Part 3, Step 3
     formQueryObj.expand = true;
+
+    // Values to update Contact Us forms with when calling postFormRevision.
+    let formUpdateObj = {}; //SEE Part 4, Step 3
     
-     // Messages used in results token that shows results of the process.
-    let successMessage = ""; 
-    let errorMessage = "Error encountered";
+    /****************
+     Script Variables
+    *****************/
+    // Messages used in postCompletion token that shows results of the process.
+    let successMessage = "The Contact Us forms have been marked as archived successfully."; 
+    let errorMessage = "Error encountered during marking Contact Us forms as archived.";
 
     //Other globally used variables.
     var errorLog = [];   //Array for capturing error messages that may occur.
 
-    /****************
-     Script Variables
-    *****************/
+    // Track if any expired records were found to archive.  
+    let expiredRecordsFound = false
     
     /****************
      Helper Functions
@@ -80,13 +83,11 @@ module.exports.main = async function (vvClient, response, token) {
         // STEP 2
 
     } catch (error) {
-        //Uncomment the following line for development
-        //response.json('200', 'Error encountered during processing.  Error was ' + err );
         errorLog.push(error);
     } finally {
-        //STEP 3 - Log any errors and send the response to the server.
+
         if (errorLog.length) {
-            //Log errors
+            // Log errors captured.
             logger.info('Errors encounterd in the process SCRIPTNAME: ' + JSON.stringify(`${errorLog}`));
             
             //Uncomment the following line for development
@@ -95,8 +96,8 @@ module.exports.main = async function (vvClient, response, token) {
         } else {
             //Uncomment the following line for development
             //response.json('200', successMessage);
-            return vvClient.scheduledProcess.postCompletion(token, "complete", true, successMessage,
-        );
+
+            return vvClient.scheduledProcess.postCompletion(token, "complete", true, successMessage,);
         }
     }
 };      
