@@ -7,15 +7,33 @@ let message; // the message is set below
 VV.Form.ShowLoadingPanel();
  
 function CallServerSide() {
-    // IF THE FORM IS TOO LARGE DON'T USE THE FOLLOWING LINE AND SEND ONLY DE DATA YOU NEED
-    let formData = VV.Form.getFormDataCollection(); // Get all the form fields data
- 
-    // Uncomment the following to add more data to the formData object.
-    // const moreData = {
-    //    name: 'This is the name you will use on getFieldValueByName',
-    //    value: "Here goes the value"
-    // };
-    // formData.push(moreData);
+    let formData = [];
+
+    //IF THE FORM IS TOO LARGE, DO NOT USE THE FOLLOWING LINE AND SEND ONLY THE DATA NEEDED
+    formData = VV.Form.getFormDataCollection(); // Get all the form fields data
+
+    // Uncomment the following to add more data to the formData object. 
+    // NOTE: The first two blocks are standard when not using getFormDataCollection; 
+    //       the third shows the format for pushing form field values and can be duplicated as necessary.
+    /* 
+    //Passes in the form record ID
+    let FormInfo = {};
+    FormInfo.name = "Form ID"; //Rename as needed
+    FormInfo.value = VV.Form.DhDocID;
+    formData.push(FormInfo);
+
+    //Passes in the GUID of the current form
+    let FormInfo = {};
+    FormInfo.name = "REVISIONID";
+    FormInfo.value = VV.Form.DataID; // Form GUID
+    formData.push(FormInfo);
+    
+    //Format for pushing individual form field; duplicate as needed
+    FormInfo = {};
+    FormInfo.name = "fieldName"; //update with required fieldName
+    FormInfo.value = VV.Form.GetFieldValue(fieldName); //update with required fieldName
+    formData.push(FormInfo); 
+    */
  
     // Parse the data as a JSON string
     const data = JSON.stringify(formData);
