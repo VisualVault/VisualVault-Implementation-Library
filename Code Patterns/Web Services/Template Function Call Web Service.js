@@ -1,7 +1,7 @@
-// PROCESS NAME for TEMPLATE NAME
+// PROCESS NAME for FORM TEMPLATE NAME
  
 const webServiceName = 'SCRIPTNAMEHERE';
-const formName = 'Name of the form';
+const formName = 'FORM TEMPLATE NAME';
 let message; // the message is set below
  
 VV.Form.ShowLoadingPanel();
