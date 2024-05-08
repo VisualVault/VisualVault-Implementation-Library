@@ -28,7 +28,13 @@
 
 //Opens using new window that is popup blocker safe as long as this function is called from a DOM event handler
 
-var popupUrl = VV.BaseURL + "form_details?formid=" + templateId + "&RelateForm=" + VV.Form.DataID + "&IsRelate=true&hidemenu=true";
+let baseURL = VV.BaseURL;
+
+if (VV.Form.FormUserID === 'Public') {
+    baseURL = baseURL.replace('/app/', '/public/');
+}
+
+let popupUrl = `${baseURL}form_details?formid=${templateId}&RelateForm=${VV.Form.DataID}&IsRelate=true&hidemenu=true`;
 
 fieldMappings.forEach(function (fieldMapping) {
     if (fieldMapping) {
