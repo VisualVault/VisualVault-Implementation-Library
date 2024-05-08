@@ -7,49 +7,47 @@
     Parameters:    The following represent variables passed into the function:  
                     templateId: Id of form template to fill in and relate to the current form instance
                     fieldMappings: array of objects containing: sourceFieldName, sourceFieldValue, targetFieldName
-                    launchType: 'self' launches the target form in the same window - 'blank' launches the target form in a new window.
+                    launchType: 'self' launches the target form in the same window.
                     Mapped field array example for build fieldMappings
                      var mappedField = {};
                      mappedField.sourceFieldName = 'providerId';
-                     mappedField.sourceFieldValue = VV.Form.GetFieldValue('providerId');
+                     mappedField.sourceFieldValue = VV.Form.GetFieldValue('Provider ID');
                      mappedField.targetFieldName = 'Provider ID';
                      fieldMappings.push(mappedField);
                    
     Return Value:  The following represents the value being returned from this function:
                             
-    Date of Dev: 06/01/2017   
-    Last Rev Date: 06/20/2022
+    Date of Dev:   
+    Last Rev Date: 08/21/2019
     Revision Notes:
     06/01/2017 - Tod Olsen: Initial creation of the business process. 
     01/03/2019 - Kendra Austin: Add launchType for option to redirect in the current window instead of opening new. 
     08/21/2019 - Jason Hatch:  Added mechanism to encode the URL so that it will change characters like a + sign in the email into an encoded value.
-    06/20/2022 - Franco Petosa Ayala: Update to ES6.
-                                      Changed the conditional structure (setting the launch mode) to improve code readability.
+    11/19/2020 - Rocky: Add encodeURIComponent to handle special characters https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
 */
 
 //Opens using new window that is popup blocker safe as long as this function is called from a DOM event handler
-let popupUrl = `${VV.BaseURL}form_details?formid=${templateId}&RelateForm=${VV.Form.DataID}&IsRelate=true&hidemenu=true`;
 
-fieldMappings.forEach( fieldMapping => {
+var popupUrl = VV.BaseURL + "form_details?formid=" + templateId + "&RelateForm=" + VV.Form.DataID + "&IsRelate=true&hidemenu=true";
+
+fieldMappings.forEach(function (fieldMapping) {
     if (fieldMapping) {
-        //Concatenates the params to the url
-        popupUrl += `&${fieldMapping.targetFieldName}=${fieldMapping.sourceFieldValue}`;
+        popupUrl += "&" + encodeURIComponent(fieldMapping.targetFieldName) + "=" + encodeURIComponent(fieldMapping.sourceFieldValue);
     }
 }, this);
 
 //Determine action by the window that is launched.
-let launchMode = '';
-if ( typeof launchType != 'undefined' && launchType.toLowerCase() == "self") {
-    launchMode = "_self";
-} else{
-    launchMode = "_blank";
+var launchMode = "_blank";
+if (launchType != null && launchType != undefined) {
+    if (launchType.toLowerCase() == "self") {
+        launchMode = "_self";
+    }
 }
-
-popupUrl = popupUrl.replace('+', '%2B');
 
 if (launchMode == '_self') {
     VV.Form.ShowLoadingPanel();
     window.location = popupUrl;
-} else {
-    VV.Form.LastChildWindow = ShowPopUp(popupUrl, "", 900, 900, "yes", "yes", "no", "no", "no");
+}
+else {
+    VV.Form.LastChildWindow = window.open(popupUrl);
 }
