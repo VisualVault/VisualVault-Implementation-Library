@@ -12,7 +12,7 @@ module.exports.getCredentials = function () {
 };
 
 module.exports.main = async function (ffCollection, vvClient, response) {
-    /*Script Name:   LibWorkflowGetUserID
+    /*Script Name:   LibWorkflowGetUserGUID
        Customer:      VisualVault
        Purpose:       The purpose of this script is to retreive the User GUID for the given User ID.
        Parameters:    The following are parameters that need to be passed into this libarary node script.
@@ -30,7 +30,7 @@ module.exports.main = async function (ffCollection, vvClient, response) {
        06/18/2025 - Alyssa Carpenter - Initial creation of the script.
        */
 
-    logger.info('Start of the process LibWorkflowGetUserID at ' + Date());
+    logger.info('Start of the process LibWorkflowGetUserGUID at ' + Date());
 
     /**************************************
      Response and error handling variables
