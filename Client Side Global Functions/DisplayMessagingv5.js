@@ -1,30 +1,29 @@
 /*
-	Script Name:   DisplayMessaging
-	Customer:      VisualVault
-	Purpose:       The purpose of this function is to display a VisualVault skinned alert message.
-	Parameters:    The following represent variables passed into the function:
-				   Passed Parameters:  messageData,title
-				   messageData - HTML formatted string with the detailed message.
-				   title - Title applied to the confirmation dialog box.
-				  
-	Return Value:  The following represents the value being returned from this function:
-						   
-	Date of Dev: 06/01/2017
-	Last Rev Date: 06/17/2022
-	Revision Notes:
+Script Name:	DisplayMessaging
+Customer:		VisualVault
+Purpose:		The purpose of this function is to display a VisualVault skinned alert message.
+ 
+Parameters:		The following represent variables passed into the function:
+				messageData - HTML formatted string with the detailed message.
+				title - Title applied to the confirmation dialog box.
+						
+Date of Dev: 	06/01/2017
+Last Rev Date:	08/19/2025
+ 
+Revision Notes:
 				06/01/2017 - Tod Olsen: Initial creation of the business process.
 				07/15/2021 - Jon Brown:   Update to work with VV version 5.
 				06/17/2022 - Franco Petosa Ayala: update to ES6.
+				08/19/2025 - Emanuel Jofre/Federico Cuelho: Updated dialog class to jQuery UI 1.12+ format.
 */
-
+ 
 const confirmDialog = $(`<div id="dialog-message" title="${title}"></div>`)
 	.hide()
 	.append($(`<p>${messageData}</p>`));
 const dialogStyle = $('<style id="dialog-message-style">body { overflow: hidden; }</style>');
-
+ 
 $('body').append(dialogStyle);
 $('body').append(confirmDialog);
-
 $('#dialog-message').dialog({
 	//animation settings when opening the dialog. Remove to have no animation
 	show: { 
@@ -41,8 +40,9 @@ $('#dialog-message').dialog({
 		{
 			text: "OK",
 			click: function () {
-                                VV.Form.HideLoadingPanel();
-				$(this).dialog('close');
+            	VV.Form.HideLoadingPanel(() => {
+					$(this).dialog('close');
+				});
 			},
 			class: 'k-button'
 		}
@@ -65,8 +65,8 @@ $('#dialog-message').dialog({
 			.css('width', '100%')
 			.css('height', '100%')
 	},
-	dialogClass: 'k-window',
 	classes: {
+		"ui-dialog": "k-window",
 		'ui-dialog-titlebar': 'k-window-titlebar',
 		'ui-dialog-content': 'k-dialog-content',
 		'ui-dialog-buttonpane': 'k-dialog-buttongroup',
